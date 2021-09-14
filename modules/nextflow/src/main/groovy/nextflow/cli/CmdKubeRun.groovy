@@ -64,6 +64,11 @@ class CmdKubeRun extends CmdRun {
     @Parameter(names=['-remoteProfile'], description = 'Choose a configuration profile in the remoteConfig')
     String remoteProfile
 
+    /**
+     * One or more local paths to mount
+     */
+    @Parameter(names = ['-lp','-local-path'], description = 'Local path mounts eg. /path/on/node:/mnt/path')
+    List<String> localMounts
 
     @Override
     String getName() { 'kuberun' }

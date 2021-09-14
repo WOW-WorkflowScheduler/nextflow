@@ -111,6 +111,8 @@ class PodSpecBuilder {
     boolean privileged
 
     int activeDeadlineSeconds
+    
+    String scheduler
 
     Map<String,List<String>> capabilities
 
@@ -314,6 +316,11 @@ class PodSpecBuilder {
     PodSpecBuilder withActiveDeadline(int seconds) {
         this.activeDeadlineSeconds = seconds
         return this
+	}
+        
+    PodSpecBuilder withScheduler( String scheduler ) {
+        this.scheduler = scheduler
+        return this
     }
 
     PodSpecBuilder withPodOptions(PodOptions opts) {
@@ -340,6 +347,8 @@ class PodSpecBuilder {
         // -- volume claims 
         if( opts.getVolumeClaims() )
             volumeClaims.addAll( opts.getVolumeClaims() )
+        if( opts.getHostMount() )
+            hostMounts.addAll( opts.getHostMount() )
         // -- labels
         if( opts.labels ) {
             def keys = opts.labels.keySet()
@@ -493,6 +502,11 @@ class PodSpecBuilder {
 
         if( this.disk ) {
             container.resources = addDiskResources(this.disk, container.resources as Map)
+        }
+
+        //scheduler
+        if( scheduler ){
+            spec.schedulerName = scheduler
         }
 
         // add storage definitions ie. volumes and mounts

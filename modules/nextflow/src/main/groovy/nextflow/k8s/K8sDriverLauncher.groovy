@@ -146,7 +146,7 @@ class K8sDriverLauncher {
         this.config = makeConfig(pipelineName)
         this.k8sConfig = makeK8sConfig(config.toMap())
         this.k8sClient = makeK8sClient(k8sConfig)
-        this.k8sConfig.checkStorageAndPaths(k8sClient)
+        this.k8sConfig.checkStorageAndPaths(k8sClient, this.pipelineName)
         createK8sConfigMap()
         createK8sLauncherPod()
         waitPodStart()
@@ -326,6 +326,22 @@ class K8sDriverLauncher {
             }
             else {
                 k8s.pod.add( [volumeClaim: name, mountPath: path] )
+            }
+        }
+
+        // -- use the volume claims specified in the command line
+        //   to populate the pod config
+        for( int i=0; i < cmd.localMounts?.size(); i++ ){
+            def entry = cmd.localMounts.get(i)
+            def parts = entry.tokenize(':')
+            def name = parts[0]
+            def path = parts[1]
+            if( i==0 ) {
+                k8s.localPath = name
+                k8s.localStorageMountPath = path
+            }
+            else {
+                k8s.pod.add( [localPath: name, mountPath: path] )
             }
         }
 

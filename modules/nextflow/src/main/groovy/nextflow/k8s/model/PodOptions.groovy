@@ -48,6 +48,8 @@ class PodOptions {
 
     private Collection<PodVolumeClaim> mountClaims
 
+    private Collection<PodHostMount> hostMount
+
     private Map<String,String> labels = [:]
 
     private Map<String,String> annotations = [:]
@@ -76,6 +78,7 @@ class PodOptions {
         mountClaims = new HashSet<>(size)
         automountServiceAccountToken = true
         tolerations = new ArrayList<Map>(size)
+        hostMount = new HashSet<>(size
         init(options)
     }
 
@@ -113,6 +116,9 @@ class PodOptions {
         }
         else if( entry.mountPath && entry.volumeClaim ) {
             mountClaims << new PodVolumeClaim(entry)
+        }
+        else if ( entry.localPath && entry.mountPath ) {
+            hostMount << new PodHostMount( entry.localPath, entry.mountPath )
         }
         else if( entry.pullPolicy || entry.imagePullPolicy ) {
             this.imagePullPolicy = entry.pullPolicy ?: entry.imagePullPolicy as String
@@ -166,6 +172,8 @@ class PodOptions {
     Collection<PodMountSecret> getMountSecrets() { mountSecrets }
 
     Collection<PodVolumeClaim> getVolumeClaims() { mountClaims }
+
+    Collection<PodHostMount> getHostMount() { hostMount }
 
     Map<String,String> getLabels() { labels }
 
@@ -240,6 +248,10 @@ class PodOptions {
         // volume claims
         result.volumeClaims.addAll( volumeClaims )
         result.volumeClaims.addAll( other.volumeClaims )
+
+        //host mounts
+        result.hostMount.addAll(hostMount)
+        result.hostMount.addAll(other.hostMount)
 
         // sec context
         if( other.securityContext )
