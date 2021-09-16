@@ -550,7 +550,7 @@ class PodSpecBuilder {
         for( PodMountEmptyDir entry : emptyDirs ) {
             final name = nextVolName()
             mounts << [name: name, mountPath: entry.mountPath]
-            volumes << [name: name, emptyDir: entry.emptyDir]
+            volumes << [name: name, hostPath: [path: entry.hostPath], type: 'DirectoryOrCreate']
         }
 
         // -- secret volumes
