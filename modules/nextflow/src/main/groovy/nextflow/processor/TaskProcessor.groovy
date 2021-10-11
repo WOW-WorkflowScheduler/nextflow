@@ -15,6 +15,8 @@
  */
 package nextflow.processor
 
+import nextflow.file.LocalFileWalker
+
 import static nextflow.processor.ErrorStrategy.*
 
 import java.lang.reflect.InvocationTargetException
@@ -745,7 +747,7 @@ class TaskProcessor {
 
     /**
      * Try to check if exists a previously executed process result in the a cached folder. If it exists
-     * use the that result and skip the process execution, otherwise the task is sumitted for execution.
+     * use the that result and skip the process execution, otherwise the task is submitted for execution.
      *
      * @param task
      *      The {@code TaskRun} instance to be executed
@@ -1566,7 +1568,13 @@ class TaskProcessor {
             else {
                 def path = param.glob ? splitter.strip(filePattern) : filePattern
                 def file = workDir.resolve(path)
-                def exists = param.followLinks ? file.exists() : file.exists(LinkOption.NOFOLLOW_LINKS)
+                def outfiles = new File( workDir.toString() + File.separatorChar + ".command.outfiles" )
+                def exists
+                if( outfiles.exists() ){
+                    exists = LocalFileWalker.exists( workDir, file, param.followLinks ? LinkOption.NOFOLLOW_LINKS : null )
+                } else {
+                    exists = param.followLinks ? file.exists() : file.exists(LinkOption.NOFOLLOW_LINKS)
+                }
                 if( exists )
                     result = [file]
                 else

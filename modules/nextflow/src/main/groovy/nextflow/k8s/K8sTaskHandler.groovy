@@ -18,6 +18,7 @@ package nextflow.k8s
 
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -143,7 +144,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
     protected BashWrapperBuilder createBashWrapper(TaskRun task) {
         return fusionEnabled()
                 ? fusionLauncher()
-                : new K8sWrapperBuilder(task)
+                : new K8sWrapperBuilder( task , k8sConfig.locationAwareScheduling() )
     }
 
     protected List<String> classicSubmitCli(TaskRun task) {
@@ -396,11 +397,20 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         }
     }
 
+    boolean checkOutputFilesExist(){
+        String path = builder.workDir.toString() + File.separatorChar
+        [
+                ".command.sh",
+                ".command.out",
+                ".exitcode"
+        ].every { new File( path + it ).exists() }
+    }
+
     @Override
     boolean checkIfCompleted() {
         if( !podName ) throw new IllegalStateException("Missing K8s ${resourceType.lower()} name - cannot check if complete")
         def state = getState()
-        if( state && state.terminated ) {
+        if( state && state.terminated && ( !k8sConfig.locationAwareScheduling() || checkOutputFilesExist() ) ) {
             if( state.nodeTermination instanceof NodeTerminationException ||
                 state.nodeTermination instanceof PodUnschedulableException ) {
                 // keep track of the node termination error

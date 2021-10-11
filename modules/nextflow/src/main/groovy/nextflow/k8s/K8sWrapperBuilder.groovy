@@ -18,6 +18,7 @@ package nextflow.k8s
 
 
 import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import nextflow.executor.BashWrapperBuilder
 import nextflow.processor.TaskRun
 import nextflow.util.Escape
@@ -28,7 +29,15 @@ import nextflow.util.Escape
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
 @CompileStatic
+@Slf4j
 class K8sWrapperBuilder extends BashWrapperBuilder {
+
+    boolean fileOutput
+
+    K8sWrapperBuilder(TaskRun task, boolean fileOutput) {
+        super(task)
+        this.fileOutput = fileOutput
+    }
 
     K8sWrapperBuilder(TaskRun task) {
         super(task)
@@ -39,5 +48,16 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
      * only for testing purpose -- do not use
      */
     protected K8sWrapperBuilder() {}
+
+
+    @Override
+    String getCleanupCmd(String scratch) {
+        String cmd = super.getCleanupCmd( scratch )
+        if( fileOutput ){
+            cmd += "find -L ${workDir.toString()} -exec stat --format \"%N;%b;%F;%x;%y;%z\" {} \\;"
+            cmd += "> ${workDir.toString()}/.command.outfiles"
+        }
+        return cmd
+    }
 
 }

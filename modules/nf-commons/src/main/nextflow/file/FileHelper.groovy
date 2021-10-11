@@ -808,7 +808,7 @@ class FileHelper {
         final matcher = getPathMatcherFor("$syntax:${filePattern}", folder.fileSystem)
         final singleParam = action.getMaximumNumberOfParameters() == 1
 
-        Files.walkFileTree(folder, walkOptions, Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
+        def visitor = new SimpleFileVisitor<Path>() {
 
             @Override
             FileVisitResult preVisitDirectory(Path fullPath, BasicFileAttributes attrs) throws IOException {
@@ -853,7 +853,15 @@ class FileHelper {
                 }
                 throw  e
             }
-      })
+        }
+
+        def outfiles = new File( folder.toString() + File.separatorChar + ".command.outfiles" )
+        if( outfiles.exists() ){
+            LocalFileWalker.walkFileTree(folder, walkOptions, Integer.MAX_VALUE, visitor)
+        } else {
+            Files.walkFileTree(folder, walkOptions, Integer.MAX_VALUE, visitor)
+        }
+
 
     }
 
