@@ -29,6 +29,7 @@ import groovy.util.logging.Slf4j
 class K8sResponseException extends Exception {
 
     K8sResponseJson response
+    private final int errorCode
 
     K8sResponseException(K8sResponseJson response) {
         super(msg0(response))
@@ -42,6 +43,11 @@ class K8sResponseException extends Exception {
 
     K8sResponseException(String message, InputStream response) {
         this(message, new K8sResponseJson(fetch(response)))
+    }
+
+    K8sResponseException(String message, InputStream response, int errorCode) {
+        this(message, new K8sResponseJson(fetch(response)))
+        this.errorCode = errorCode
     }
 
     static private String msg1( String msg, K8sResponseJson resp ) {
@@ -78,6 +84,10 @@ class K8sResponseException extends Exception {
             log.debug "Unable to fetch response text -- Cause: ${e.message ?: e}"
             return null
         }
+    }
+
+    int getErrorCode(){
+        errorCode
     }
 
 }
