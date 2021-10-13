@@ -120,7 +120,7 @@ class K8sExecutor extends Executor {
                                 spec: [
                                         containers: [ [
                                                               name: name,
-                                                              image: 'alpine/k8s:1.18.2',
+                                                              image: k8sConfig.daemonSet(),
                                                               command: ['/bin/sh','-c', 'sleep infinity'],
                                                               volumeMounts: mounts
                                                       ] ],
