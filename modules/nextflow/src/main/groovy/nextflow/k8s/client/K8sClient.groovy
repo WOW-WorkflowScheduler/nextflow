@@ -513,6 +513,35 @@ class K8sClient {
         throw new K8sResponseException("K8s undetermined status conditions for pod $podName", resp)
     }
 
+    K8sResponseJson daemonSetCreate(Map req, Path saveYamlPath=null) {
+
+        if( saveYamlPath )
+            try {
+                saveYamlPath.text = new Yaml().dump(req).toString()
+            }
+            catch( Exception e ) {
+                log.debug "WARN: unable to save request yaml -- cause: ${e.message ?: e}"
+            }
+
+        daemonSetCreate(JsonOutput.toJson(req))
+    }
+
+    K8sResponseJson daemonSetCreate(String req) {
+        assert req
+        final action = "/apis/apps/v1/namespaces/$config.namespace/daemonsets"
+        final resp = post(action, req)
+        trace('POST', action, resp.text)
+        new K8sResponseJson(resp.text)
+    }
+
+    K8sResponseJson daemonSetDelete(String name) {
+        assert name
+        final action = "/apis/apps/v1/namespaces/$config.namespace/daemonsets/$name"
+        final resp = delete(action)
+        trace('DELETE', action, resp.text)
+        new K8sResponseJson(resp.text)
+    }
+
     protected void checkInvalidWaitingState( Map waiting, K8sResponseJson resp ) {
         if( waiting.reason == 'ErrImagePull' || waiting.reason == 'ImagePullBackOff') {
             def message = "K8s pod image cannot be pulled"
