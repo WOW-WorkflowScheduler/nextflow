@@ -16,6 +16,7 @@
 
 package nextflow.k8s
 
+import groovy.json.JsonOutput
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
 import groovy.transform.PackageScope
@@ -26,7 +27,6 @@ import nextflow.k8s.client.K8sClient
 import nextflow.k8s.client.K8sResponseException
 import nextflow.k8s.model.PodHostMount
 import nextflow.k8s.model.PodOptions
-import nextflow.k8s.model.PodVolumeClaim
 import nextflow.processor.TaskHandler
 import nextflow.processor.TaskMonitor
 import nextflow.processor.TaskPollingMonitor
@@ -83,7 +83,43 @@ class K8sExecutor extends Executor {
         if( k8sConfig.locationAwareScheduling() ) {
             createDaemonSet()
         }
-        
+
+        final K8sConfig.K8sScheduler schedulerConfig = k8sConfig.getScheduler()
+
+        if( schedulerConfig ) {
+            registerScheduler( schedulerConfig )
+        }
+
+    }
+
+    private void registerScheduler( K8sConfig.K8sScheduler schedulerConfig ) {
+        String url = "${schedulerConfig.getDNS()}/scheduler/registerScheduler/${k8sConfig.getNamespace() ?: 'default'}/${session.runName}/${schedulerConfig.getStrategy()}"
+        if( !url.startsWith( 'http://' ) && !url.startsWith( 'https://' )){
+            throw new IllegalArgumentException( "Config: k8s.scheduler.dns ('${schedulerConfig.getDNS()}') does not start with http[s]://"  )
+        }
+        HttpURLConnection post = new URL(url).openConnection() as HttpURLConnection
+        post.setRequestMethod( "POST" )
+        post.setDoOutput(true)
+        post.setRequestProperty("Content-Type", "application/json")
+        String message = JsonOutput.toJson( [:] )
+        try{
+            post.getOutputStream().write(message.getBytes("UTF-8"))
+        } catch ( UnknownHostException e ){
+            throw new IllegalArgumentException( "The scheduler was not found under '$url', is the url correct and the scheduler running?" )
+        } catch ( IOException e ){
+            throw new IllegalStateException( "Cannot register scheduler under $url, got ${e.class.toString()}: ${e.getMessage()}", e )
+        }
+        int responseCode = post.getResponseCode()
+        if( responseCode != 200 ){
+            throw new IllegalStateException( "Got code: ${responseCode} from k8s scheduler while registering" )
+        }
+    }
+
+    private void closeScheduler( K8sConfig.K8sScheduler schedulerConfig ){
+        HttpURLConnection post = new URL("${schedulerConfig.getDNS()}/scheduler/${k8sConfig.getNamespace() ?: 'default'}/${session.runName}").openConnection() as HttpURLConnection;
+        post.setRequestMethod( "DELETE" )
+        int responseCode = post.getResponseCode()
+        log.trace "Delete scheduler code was: ${responseCode}"
     }
 
     private void createDaemonSet(){
@@ -143,6 +179,16 @@ class K8sExecutor extends Executor {
     }
 
     void close(){
+
+        final K8sConfig.K8sScheduler schedulerConfig = k8sConfig.getScheduler()
+        if( schedulerConfig ) {
+            try{
+                closeScheduler( schedulerConfig )
+            } catch (Exception e){
+                log.error( "Error while closing scheduler", e)
+            }
+        }
+
         if( daemonSet ){
             try {
                 def result = client.daemonSetDelete( daemonSet )

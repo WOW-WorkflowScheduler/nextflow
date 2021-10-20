@@ -104,6 +104,10 @@ class K8sConfig implements Map<String,Object> {
         new K8sDebug( (Map<String,Object>)get('debug') )
     }
 
+    K8sScheduler getScheduler(){
+        target.scheduler || locationAwareScheduling() ? new K8sScheduler( (Map<String,Object>)target.scheduler ) : null
+    }
+
     boolean getCleanup(boolean defValue=true) {
         target.cleanup == null ? defValue : Boolean.valueOf( target.cleanup as String )
     }
@@ -333,6 +337,28 @@ class K8sConfig implements Map<String,Object> {
         }
 
         boolean getYaml() { Boolean.valueOf( target.yaml as String ) }
+    }
+
+    @CompileStatic
+    static class K8sScheduler {
+
+        @Delegate
+        Map<String,Object> target
+
+        K8sScheduler(Map<String,Object> scheduler) {
+            this.target = scheduler
+        }
+
+        String getName() { target.name as String ?: 'workflow-scheduler' }
+
+        String getDNS() {
+            String dns = target.dns as String ?: "http://${getName()}.kube-system.svc.cluster.local"
+            if ( dns.endsWith( '/' ) ) dns = dns.substring(0, dns.length() - 1)
+            dns
+        }
+
+        String getStrategy() { target.strategy as String ?: 'FIFO' }
+
     }
 }
 
