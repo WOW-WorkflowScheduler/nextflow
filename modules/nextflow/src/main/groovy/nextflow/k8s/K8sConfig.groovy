@@ -33,6 +33,7 @@ import nextflow.k8s.model.PodSecurityContext
 import nextflow.k8s.model.PodVolumeClaim
 import nextflow.k8s.model.ResourceType
 import nextflow.util.Duration
+import java.nio.file.Path
 
 /**
  * Model Kubernetes specific settings defined in the nextflow
@@ -108,6 +109,10 @@ class K8sConfig implements Map<String,Object> {
         target.scheduler || locationAwareScheduling() ? new K8sScheduler( (Map<String,Object>)target.scheduler ) : null
     }
 
+    Storage getStorage() {
+        locationAwareScheduling() ? new Storage( (Map<String,Object>)target.storage, getLocalClaimPaths() ) : null
+    }
+
     boolean getCleanup(boolean defValue=true) {
         target.cleanup == null ? defValue : Boolean.valueOf( target.cleanup as String )
     }
@@ -161,7 +166,7 @@ class K8sConfig implements Map<String,Object> {
             log.warn "K8s `userDir` has been deprecated -- Use `launchDir` instead"
             return target.userDir
         }
-        target.launchDir ?: "${getLocalStorageMountPath()?:getStorageMountPath()}/${getUserName()}" as String
+        target.launchDir ?: "${getStorageMountPath()}/${getUserName()}" as String
     }
 
     /**
@@ -196,7 +201,7 @@ class K8sConfig implements Map<String,Object> {
     }
 
     boolean locationAwareScheduling() {
-        getLocalClaimPaths().size() > 0 && podOptions.hostMount.any { getWorkDir().startsWith(it.mountPath) }
+        getLocalClaimPaths().size() > 0
     }
 
     PodOptions getPodOptions() {
@@ -227,15 +232,16 @@ class K8sConfig implements Map<String,Object> {
      * Find a volume claim name given the mount path
      *
      * @param path The volume claim mount path
-     * @param noLocalMounts path has to be on a shared mount
      * @return The volume claim name for the given mount path
      */
-    String findVolumeClaimByPath(String path, noLocalMounts = false ) {
-        def result = podOptions.volumeClaims.find { path.startsWith(it.mountPath) }?.claimName
-        if( !result && !noLocalMounts ){
-            result = podOptions.hostMount.find { path.startsWith(it.mountPath) }?.hostPath
-        }
-        return result
+    String findVolumeClaimByPath(String path) {
+        def result = podOptions.volumeClaims.find { path.startsWith(it.mountPath) }
+        return result ? result.claimName : null
+    }
+
+    String findLocalVolumeClaimByPath(String path) {
+        def result = podOptions.hostMount.find { path.startsWith(it.mountPath) }
+        return result ? result.hostPath : null
     }
 
     @Memoized
@@ -312,17 +318,20 @@ class K8sConfig implements Map<String,Object> {
         }
 
         if( !findVolumeClaimByPath(getLaunchDir()) )
-            throw new AbortOperationException("Kubernetes `launchDir` must be a path mounted as a persistent volume or locally -- launchDir=$launchDir; volumes=${getClaimPaths().join(', ')} locally=${getLocalClaimPaths().join(', ')}")
+            throw new AbortOperationException("Kubernetes `launchDir` must be a path mounted as a persistent volume -- launchDir=$launchDir; volumes=${getClaimPaths().join(', ')}")
 
         if( !findVolumeClaimByPath(getWorkDir()) )
-            throw new AbortOperationException("Kubernetes `workDir` must be a path mounted as a persistent volume or locally -- workDir=$workDir; volumes=${getClaimPaths().join(', ')} locally=${getLocalClaimPaths().join(', ')}")
+            throw new AbortOperationException("Kubernetes `workDir` must be a path mounted as a persistent volume -- workDir=$workDir; volumes=${getClaimPaths().join(', ')}")
 
-        if( !findVolumeClaimByPath(getProjectDir(), true) )
+        if( !findVolumeClaimByPath(getProjectDir()) )
             throw new AbortOperationException("Kubernetes `projectDir` must be a path mounted as a persistent volume -- projectDir=$projectDir; volumes=${getClaimPaths().join(', ')}")
 
         //The nextflow project/workflow has to be on a shared drive
-        if ( pipelineName && !findVolumeClaimByPath(pipelineName, true) )
+        if ( pipelineName && !findVolumeClaimByPath(pipelineName) )
             throw new AbortOperationException("Kubernetes `pipelineName` must be a path mounted as a persistent volume -- projectDir=$pipelineName; volumes=${getClaimPaths().join(', ')}")
+
+        if( getStorage() && !findLocalVolumeClaimByPath(getStorage().getWorkdir()) )
+            throw new AbortOperationException("Kubernetes `storage.workdir` must be a path mounted as a local volume -- storage.workdir=${getStorage().getWorkdir()}; volumes=${getLocalClaimPaths().join(', ')}")
 
     }
 
@@ -359,6 +368,36 @@ class K8sConfig implements Map<String,Object> {
 
         String getStrategy() { target.strategy as String ?: 'FIFO' }
 
+    }
+
+    @CompileStatic
+    static class Storage {
+
+
+        @Delegate
+        Map<String,Object> target
+        Collection<String> localClaims
+
+        Storage(Map<String,Object> scheduler, Collection<String> localClaims ) {
+            this.target = scheduler
+            this.localClaims = localClaims
+        }
+
+        String getType() {
+            target.type as String ?: 'copy'
+        }
+
+        String getWorkdir() {
+            Path workdir = (target.workdir ?: localClaims[0]) as Path
+            if( ! workdir.getName().equalsIgnoreCase('localWork') ){
+                workdir = workdir.resolve( 'localWork' )
+            }
+            return workdir.toString()
+        }
+
+        boolean deleteIntermediateData(){
+            target.deleteIntermediateData as Boolean ?: false
+        }
     }
 }
 

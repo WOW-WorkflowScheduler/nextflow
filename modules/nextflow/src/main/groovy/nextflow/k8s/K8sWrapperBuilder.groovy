@@ -20,8 +20,10 @@ package nextflow.k8s
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import nextflow.executor.BashWrapperBuilder
+import nextflow.file.FileHelper
 import nextflow.processor.TaskRun
 import nextflow.util.Escape
+import java.nio.file.Path
 
 /**
  * Implements a BASH wrapper for tasks executed by kubernetes cluster
@@ -32,11 +34,25 @@ import nextflow.util.Escape
 @Slf4j
 class K8sWrapperBuilder extends BashWrapperBuilder {
 
-    boolean fileOutput
+    K8sConfig.Storage storage
 
-    K8sWrapperBuilder(TaskRun task, boolean fileOutput) {
+    K8sWrapperBuilder(TaskRun task, K8sConfig.Storage storage) {
         super(task)
-        this.fileOutput = fileOutput
+        this.storage = storage
+        if( storage ){
+            switch (storage.getType().toLowerCase()) {
+                case 'copy':
+                    if ( !this.scratch ){
+                        //Reduce amount of local data
+                        this.scratch = true
+                        this.stageOutMode = 'move'
+                    }
+                    if ( this.targetDir == this.workDir ){
+                        this.targetDir = FileHelper.getWorkFolder( storage.getWorkdir() as Path, this.getHash() )
+                    }
+                    break
+            }
+        }
     }
 
     K8sWrapperBuilder(TaskRun task) {
@@ -53,8 +69,8 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
     @Override
     String getCleanupCmd(String scratch) {
         String cmd = super.getCleanupCmd( scratch )
-        if( fileOutput ){
-            cmd += "find -L ${workDir.toString()} -exec stat --format \"%N;%b;%F;%x;%y;%z\" {} \\;"
+        if( storage ){
+            cmd += "find -L ${targetDir.toString()} -exec stat --format \"%N;%b;%F;%x;%y;%z\" {} \\;"
             cmd += "> ${workDir.toString()}/.command.outfiles"
         }
         return cmd
