@@ -18,7 +18,6 @@ package nextflow.k8s
 
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -44,6 +43,8 @@ import nextflow.processor.TaskStatus
 import nextflow.trace.TraceRecord
 import nextflow.util.Escape
 import nextflow.util.PathTrie
+import nextflow.file.FileHolder
+import nextflow.k8s.client.K8sSchedulerClient
 /**
  * Implements the {@link TaskHandler} interface for Kubernetes pods
  *
@@ -70,6 +71,8 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
 
     private K8sClient client
 
+    private K8sSchedulerClient schedulerClient
+
     private String podName
 
     private BashWrapperBuilder builder
@@ -92,6 +95,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         super(task)
         this.executor = executor
         this.client = executor.client
+        this.schedulerClient = executor.schedulerClient
         this.outputFile = task.workDir.resolve(TaskRun.CMD_OUTFILE)
         this.errorFile = task.workDir.resolve(TaskRun.CMD_ERRFILE)
         this.exitFile = task.workDir.resolve(TaskRun.CMD_EXIT)
@@ -297,6 +301,41 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         k8sConfig.getAnnotations()
     }
 
+    private extractValue( Object input ){
+        if( input instanceof Collection ){
+            return input.collect { extractValue(it) }
+        } else if( input instanceof FileHolder ){
+            return [ storePath : input.storePath.toString(), sourceObj : input.sourceObj.toString(), stageName : input.stageName.toString() ]
+        } else if ( input instanceof Boolean || input instanceof Number || input instanceof String ) {
+            return input
+        } else {
+            log.error ( "input was of class ${input.class}: $input")
+            return input
+        }
+
+    }
+
+    private Map registerTask(){
+
+        String name = task.name;
+        if( name.endsWith(")") ){
+            name = name.substring(0 , name.lastIndexOf( ' ' ) )
+        }
+
+        Map config = [
+                hash : "nf-${task.hash}",
+                inputs : task.getInputs().collect {[ name : it.key.name, value : extractValue(it.value)] },
+                schedulerParams : [:],
+                name : task.name,
+                task : name,
+                stageInMode : task.getConfig().stageInMode
+        ]
+
+
+        return schedulerClient.registerTask( config )
+
+    }
+
     /**
      * Creates a new K8s pod executing the associated task
      */
@@ -307,6 +346,8 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         builder.build()
 
         final req = newSubmitRequest(task)
+
+		if( schedulerClient ) registerTask()
         final resp = useJobResource()
                 ? client.jobCreate(req, yamlDebugPath())
                 : client.podCreate(req, yamlDebugPath())
@@ -400,20 +441,16 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         }
     }
 
-    boolean checkOutputFilesExist(){
-        String path = builder.workDir.toString() + File.separatorChar
-        [
-                ".command.sh",
-                ".command.out",
-                ".exitcode"
-        ].every { new File( path + it ).exists() }
+    boolean schedulerPostProcessingHasFinished(){
+        Map state = schedulerClient.getTaskState(podName)
+        return (!state.state) ?: state.state.toString().equals( "FINISHED" )
     }
 
     @Override
     boolean checkIfCompleted() {
         if( !podName ) throw new IllegalStateException("Missing K8s ${resourceType.lower()} name - cannot check if complete")
         def state = getState()
-        if( state && state.terminated && ( !k8sConfig.locationAwareScheduling() || checkOutputFilesExist() ) ) {
+        if( state && state.terminated && ( !k8sConfig.locationAwareScheduling() || schedulerPostProcessingHasFinished() ) ) {
             if( state.nodeTermination instanceof NodeTerminationException ||
                 state.nodeTermination instanceof PodUnschedulableException ) {
                 // keep track of the node termination error
