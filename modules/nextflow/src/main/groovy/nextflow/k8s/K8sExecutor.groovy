@@ -134,7 +134,7 @@ class K8sExecutor extends Executor {
                                 spec: [
                                         containers: [ [
                                                               name: name,
-                                                              image: k8sConfig.daemonSet(),
+                                                              image: k8sConfig.getStorage().getImageName(),
                                                               command: ['/bin/sh','-c', 'sleep infinity'],
                                                               volumeMounts: mounts
                                                       ] ],

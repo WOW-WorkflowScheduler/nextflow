@@ -189,8 +189,6 @@ class K8sConfig implements Map<String,Object> {
 
     String getServiceAccount() { target.serviceAccount }
 
-    String daemonSet() { target.daemonSet ?: 'alpine/k8s:1.20.7' }
-
     String getNextflowImageName() {
         final defImage = "nextflow/nextflow:${Const.APP_VER}"
         return target.navigate('nextflow.image', defImage)
@@ -398,6 +396,11 @@ class K8sConfig implements Map<String,Object> {
         boolean deleteIntermediateData(){
             target.deleteIntermediateData as Boolean ?: false
         }
+
+        String getImageName() {
+            target.imageName ?: 'alpine/k8s:1.20.7'
+        }
+
     }
 }
 
