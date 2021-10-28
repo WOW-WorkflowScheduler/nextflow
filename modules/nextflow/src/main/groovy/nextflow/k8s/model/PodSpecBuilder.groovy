@@ -16,6 +16,9 @@
 
 package nextflow.k8s.model
 
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -117,6 +120,10 @@ class PodSpecBuilder {
     Map<String,List<String>> capabilities
 
     List<String> devices
+    
+    List<String> initCommand = []
+
+    String initImageName
 
     /**
      * @return A sequential volume unique identifier
@@ -323,6 +330,17 @@ class PodSpecBuilder {
         return this
     }
 
+    PodSpecBuilder withInitCommand( cmd ) {
+        assert cmd instanceof List || cmd instanceof CharSequence, "Missing or invalid K8s command parameter: $cmd"
+        this.initCommand = cmd instanceof List ? cmd : ['sh','-c', cmd.toString()]
+        return this
+    }
+
+    PodSpecBuilder withInitImageName(String name) {
+        this.initImageName = name
+        return this
+    }
+
     PodSpecBuilder withPodOptions(PodOptions opts) {
         // -- pull policy
         if( opts.imagePullPolicy )
@@ -439,6 +457,20 @@ class PodSpecBuilder {
                 restartPolicy: restart,
                 containers: [ container ],
         ]
+
+        HashMap<String,Object> initContainer = null
+        if ( initCommand ){
+            initContainer = [
+                     name : "setup-environment",
+                     image: initImageName,
+                     command: initCommand
+             ]
+            spec.initContainers = [initContainer]
+            if( this.workDir )
+                initContainer.put('workingDir', workDir)
+            if( imagePullPolicy )
+                initContainer.imagePullPolicy = imagePullPolicy
+        }
 
         if( nodeSelector )
             spec.nodeSelector = nodeSelector.toSpec()
@@ -569,8 +601,11 @@ class PodSpecBuilder {
 
         if( volumes )
             spec.volumes = volumes
-        if( mounts )
+        if( mounts ){
             container.volumeMounts = mounts
+            if( initContainer )
+                initContainer.put('volumeMounts', new JsonSlurper().parseText(JsonOutput.toJson(mounts)))
+        }
 
         return pod
     }

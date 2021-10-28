@@ -224,6 +224,16 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         if ( executor.getK8sConfig().getScheduler() )
             builder.withScheduler( "${executor.getK8sConfig().getScheduler().getName()}-${getRunName()}" )
 
+        final def schedulerConf = executor.getK8sConfig().getScheduler()
+        if ( schedulerConf )
+            builder.withScheduler( "${schedulerConf.getName()}-${getRunName()}" )
+
+        final def storage = executor.getK8sConfig().getStorage()
+        if ( storage ){
+            builder.withInitImageName( storage.getImageName() )
+            builder.withInitCommand( ['sh', '-c', '.command.init'] )
+        }
+
         // note: task environment is managed by the task bash wrapper
         // do not add here -- see also #680
         if( fixOwnership() )
