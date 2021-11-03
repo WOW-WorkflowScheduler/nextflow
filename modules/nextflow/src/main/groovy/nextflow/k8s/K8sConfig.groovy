@@ -358,13 +358,21 @@ class K8sConfig implements Map<String,Object> {
 
         String getName() { target.name as String ?: 'workflow-scheduler' }
 
-        String getDNS() {
-            String dns = target.dns as String ?: "http://${getName()}.kube-system.svc.cluster.local"
-            if ( dns.endsWith( '/' ) ) dns = dns.substring(0, dns.length() - 1)
-            dns
-        }
-
         String getStrategy() { target.strategy as String ?: 'FIFO' }
+
+        String getServiceAccount() { target.serviceAccount as String }
+
+        String getImagePullPolicy() { target.imagePullPolicy as String }
+
+        Integer getCPUs() { target.cpu as Integer ?: 1 }
+
+        String getContainer() { target.container as String }
+
+        String getCommand() { target.command as String }
+
+        Integer getPort() { target.port as Integer ?: 8080 }
+
+        String getWorkDir() { target.workDir as String }
 
     }
 

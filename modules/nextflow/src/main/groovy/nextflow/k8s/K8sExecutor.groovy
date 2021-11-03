@@ -28,6 +28,7 @@ import nextflow.k8s.client.K8sResponseException
 import nextflow.k8s.client.K8sSchedulerClient
 import nextflow.k8s.model.PodHostMount
 import nextflow.k8s.model.PodOptions
+import nextflow.k8s.model.PodVolumeClaim
 import nextflow.processor.TaskHandler
 import nextflow.processor.TaskMonitor
 import nextflow.processor.TaskPollingMonitor
@@ -94,8 +95,16 @@ class K8sExecutor extends Executor {
         final K8sConfig.K8sScheduler schedulerConfig = k8sConfig.getScheduler()
 
         if( schedulerConfig ) {
-            schedulerClient = new K8sSchedulerClient(schedulerConfig, k8sConfig.getNamespace(), session.runName)
-            schedulerClient.registerScheduler()
+            schedulerClient = new K8sSchedulerClient(schedulerConfig, k8sConfig.getNamespace(), session.runName, client,
+                    k8sConfig.getPodOptions().getHostMount(), k8sConfig.getPodOptions().getVolumeClaims())
+            final PodOptions podOptions = k8sConfig.getPodOptions()
+            Map data = [
+                    workDir : k8sConfig.getStorage().getWorkdir(),
+                    localClaims : podOptions.hostMount,
+                    volumeClaims : podOptions.volumeClaims
+            ]
+
+            schedulerClient.registerScheduler( data )
         }
 
     }
@@ -113,6 +122,27 @@ class K8sExecutor extends Executor {
             final name = 'vol-' + volume++
             mounts << [name: name, mountPath: entry.mountPath]
             volumes << [name: name, hostPath: [path: entry.hostPath], type: 'DirectoryOrCreate']
+        }
+
+        final namesMap = [:]
+
+        // creates a volume name for each unique claim name
+        for( String claimName : podOptions.volumeClaims.collect { it.claimName }.unique() ) {
+            final volName = 'vol-' + volume++
+            namesMap[claimName] = volName
+            volumes << [name: volName, persistentVolumeClaim: [claimName: claimName]]
+        }
+
+        // -- volume claims
+        for( PodVolumeClaim entry : podOptions.volumeClaims ) {
+            //check if we already have a volume for the pvc
+            final name = namesMap.get(entry.claimName)
+            final claim = [name: name, mountPath: entry.mountPath ]
+            if( entry.subPath )
+                claim.subPath = entry.subPath
+            if( entry.readOnly )
+                claim.readOnly = entry.readOnly
+            mounts << claim
         }
 
         String name = "mount-${session.runName.replace('_', '-')}"

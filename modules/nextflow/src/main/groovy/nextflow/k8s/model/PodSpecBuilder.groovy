@@ -425,9 +425,19 @@ class PodSpecBuilder {
             env.add(entry.toSpec())
         }
 
-        final container = [ name: this.podName, image: this.imageName ]
+        final res = [:]
+        if( this.cpus )
+            res.cpu = this.cpus
+        if( this.memory )
+            res.memory = this.memory
+
+        final Map<String, Object> container = [
+                name: this.podName,
+                image: this.imageName
+        ] as Map<String, Object>
+
         if( this.command )
-            container.command = this.command
+            container.put('command', this.command)
         if( this.args )
             container.args = args
 
@@ -444,7 +454,7 @@ class PodSpecBuilder {
         if( privileged ) {
             // note: privileged flag needs to be defined in the *container* securityContext
             // not the 'spec' securityContext (see below)
-            secContext.privileged =true
+            secContext.privileged = true
         }
         if( capabilities ) {
             secContext.capabilities = capabilities

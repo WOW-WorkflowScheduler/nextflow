@@ -18,6 +18,11 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import nextflow.k8s.K8sConfig
+import nextflow.k8s.model.PodHostMount
+import nextflow.k8s.model.PodSpecBuilder
+import nextflow.k8s.model.PodVolumeClaim
+
+import java.nio.file.Paths
 
 /**
  * K8sScheduler API client
@@ -30,47 +35,129 @@ class K8sSchedulerClient {
     private final K8sConfig.K8sScheduler schedulerConfig
     private final String namespace
     private final String runName
-    private final String dns
     private boolean registered = false
     private boolean closed = false
+    private final K8sClient k8sClient
+    private final Collection<PodHostMount> hostMounts
+    private final Collection<PodVolumeClaim> volumeClaims
+    private String ip
 
 
-    K8sSchedulerClient(K8sConfig.K8sScheduler schedulerConfig, String namespace, String runName) {
+    K8sSchedulerClient(K8sConfig.K8sScheduler schedulerConfig, String namespace, String runName, K8sClient k8sClient,
+                       Collection<PodHostMount> hostMounts, Collection<PodVolumeClaim> volumeClaims) {
+        this.volumeClaims = volumeClaims
+        this.hostMounts = hostMounts
+        this.k8sClient = k8sClient
         this.schedulerConfig = schedulerConfig
-        this.dns = schedulerConfig.getDNS()
         this.namespace = namespace ?: 'default'
         this.runName = runName
     }
 
-    synchronized void registerScheduler() {
-        if ( registered ) return
-        registered = true;
-        String url = "$dns/scheduler/registerScheduler/$namespace/$runName/${schedulerConfig.getStrategy()}"
-        if( !url.startsWith( 'http://' ) && !url.startsWith( 'https://' )){
-            throw new IllegalArgumentException( "Config: k8s.scheduler.dns ('${schedulerConfig.getDNS()}') does not start with http[s]://"  )
-        }
-        HttpURLConnection post = new URL(url).openConnection() as HttpURLConnection
-        post.setRequestMethod( "POST" )
-        post.setDoOutput(true)
-        post.setRequestProperty("Content-Type", "application/json")
-        String message = JsonOutput.toJson( [:] )
+    private String getDNS(){
+        return "http://${ip.replace('.','-')}.${namespace}.pod.cluster.local:${schedulerConfig.getPort()}"
+    }
+
+    private void startScheduler(){
+
+        boolean start = false
+        Map state
+
         try{
-            post.getOutputStream().write(message.getBytes("UTF-8"))
-        } catch ( UnknownHostException e ){
-            throw new IllegalArgumentException( "The scheduler was not found under '$url', is the url correct and the scheduler running?" )
-        } catch ( IOException e ){
-            throw new IllegalStateException( "Cannot register scheduler under $url, got ${e.class.toString()}: ${e.getMessage()}", e )
+            //If no pod with the name exists an exceptions is thrown
+            state = k8sClient.podState( schedulerConfig.getName() )
+            if( state.terminated ) {
+                k8sClient.podDelete( schedulerConfig.getName() )
+                start = true
+                log.info "Scheduler ${schedulerConfig.getName()} is terminated"
+            } else if( state.running || state.waiting ) log.trace "Scheduler ${schedulerConfig.getName()} is already running"
+            else log.error "Unknown state for ${schedulerConfig.getName()}: ${state.toString()}"
+
+        } catch ( K8sResponseException e ) {
+            if ( e.getErrorCode() == 404 ) start = true
+            else log.error( "Got unexpected HTTP code ${e.getErrorCode()} while checking scheduler's state", e.message )
         }
-        int responseCode = post.getResponseCode()
-        if( responseCode != 200 ){
-            throw new IllegalStateException( "Got code: ${responseCode} from k8s scheduler while registering" )
+
+        if( start ){
+            log.trace "Scheduler ${schedulerConfig.getName()} is not running, let's start"
+            final builder = new PodSpecBuilder()
+                    .withImageName( schedulerConfig.getContainer() )
+                    .withPodName( schedulerConfig.getName() )
+                    .withCpus( schedulerConfig.getCPUs() )
+                    .withImagePullPolicy( schedulerConfig.getImagePullPolicy() )
+                    .withServiceAccount( schedulerConfig.getServiceAccount() )
+                    .withNamespace( namespace )
+                    .withLabel('component', 'scheduler')
+                    .withLabel('tier', 'control-plane')
+                    .withHostMounts( hostMounts )
+                    .withVolumeClaims( volumeClaims )
+                    .withWorkDir( schedulerConfig.getWorkDir() )
+
+            if( schedulerConfig.getCommand() )
+                builder.withCommand( schedulerConfig.getCommand() )
+
+            Map pod = builder.build()
+
+            List env = [[
+                    name: 'SCHEDULER_NAME',
+                    value: schedulerConfig.getName()
+            ]]
+
+            Map container = pod.spec.containers.get(0) as Map
+            container.put('env', env)
+
+            k8sClient.podCreate( pod, Paths.get('.nextflow-scheduler.yaml'), namespace)
         }
+
+        //wait for scheduler to get ready
+        def i = 0
+        do {
+            sleep(100)
+            state = k8sClient.podState( schedulerConfig.getName() )
+            //log state every 2 seconds
+            if( i++ % 20 ) log.trace "Waiting for scheduler to start, current state: ${state.toString()}"
+        } while ( state.waiting );
+
+        ip = k8sClient.podIP( schedulerConfig.getName() )
+        if( !state.running ) throw new IllegalStateException( "Scheduler pod ${schedulerConfig.getName()} was not started, state: ${state.toString()}" )
+
+    }
+
+    synchronized void registerScheduler( Map data ) {
+        if ( registered ) return
+
+        startScheduler()
+
+        String url = "${getDNS()}/scheduler/registerScheduler/$namespace/$runName/${schedulerConfig.getStrategy()}"
+        registered = true;
+        int trials = 0
+        while ( trials++ < 50 ) {
+            try {
+                HttpURLConnection post = new URL(url).openConnection() as HttpURLConnection
+                post.setRequestMethod( "POST" )
+                post.setDoOutput(true)
+                post.setRequestProperty("Content-Type", "application/json")
+                String message = JsonOutput.toJson( data )
+                post.getOutputStream().write(message.getBytes("UTF-8"))
+                int responseCode = post.getResponseCode()
+                if( responseCode != 200 ){
+                    throw new IllegalStateException( "Got code: ${responseCode} from k8s scheduler while registering" )
+                }
+                return
+            } catch (UnknownHostException e) {
+                throw new IllegalArgumentException("The scheduler was not found under '$url', is the url correct and the scheduler running?")
+            } catch (ConnectException e) {
+                Thread.sleep( 3000 )
+            }catch (IOException e) {
+                throw new IllegalStateException("Cannot register scheduler under $url, got ${e.class.toString()}: ${e.getMessage()}", e)
+            }
+        }
+        throw new IllegalStateException("Cannot connect to scheduler under $url" )
     }
 
     synchronized void closeScheduler(){
         if ( closed ) return
         closed = true;
-        HttpURLConnection post = new URL("$dns/scheduler/$namespace/$runName").openConnection() as HttpURLConnection
+        HttpURLConnection post = new URL("${getDNS()}/scheduler/$namespace/$runName").openConnection() as HttpURLConnection
         post.setRequestMethod( "DELETE" )
         int responseCode = post.getResponseCode()
         log.trace "Delete scheduler code was: ${responseCode}"
@@ -78,7 +165,7 @@ class K8sSchedulerClient {
 
     Map registerTask( Map config ){
 
-        HttpURLConnection post = new URL("$dns/scheduler/registerTask/$namespace/$runName").openConnection() as HttpURLConnection
+        HttpURLConnection post = new URL("${getDNS()}/scheduler/registerTask/$namespace/$runName").openConnection() as HttpURLConnection
         post.setRequestMethod( "POST" )
         String message = JsonOutput.toJson( config )
         post.setDoOutput(true)
@@ -95,7 +182,7 @@ class K8sSchedulerClient {
 
     Map getTaskState( String podname ){
 
-        HttpURLConnection get = new URL("$dns/scheduler/taskstate/$namespace/$runName/$podname").openConnection() as HttpURLConnection
+        HttpURLConnection get = new URL("${getDNS()}/scheduler/taskstate/$namespace/$runName/$podname").openConnection() as HttpURLConnection
         get.setRequestMethod( "GET" )
         get.setDoOutput(true)
         int responseCode = get.getResponseCode()
