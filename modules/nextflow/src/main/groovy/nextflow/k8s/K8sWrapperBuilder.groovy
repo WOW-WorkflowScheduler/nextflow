@@ -65,6 +65,16 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
      */
     protected K8sWrapperBuilder() {}
 
+    @Override
+    protected String getLaunchCommand(String interpreter, String env) {
+        String cmd = ''
+        if( storage ){
+            cmd += "find -L ${targetDir.toString()} -exec stat --format \"%N;%b;%F;%x;%y;%z\" {} \\;"
+            cmd += "> ${workDir.toString()}/.command.infiles\n"
+        }
+        cmd += super.getLaunchCommand(interpreter, env)
+        return cmd
+    }
 
     @Override
     String getCleanupCmd(String scratch) {
