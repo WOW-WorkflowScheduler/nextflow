@@ -36,6 +36,19 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
 
     K8sConfig.Storage storage
 
+    static String getStatsAndResolveSymlinks = """\
+            getStatsAndResolveSymlinks () {
+                STARTFILE="\$1"
+                ENDFILE="\$(readlink -f "\$STARTFILE")"
+                INFO="\$(stat -c "%s;%F;%w;%x;%y" "\$ENDFILE")"
+                [ "\$STARTFILE" = "\$ENDFILE" ] && ENDFILE=""
+                OUTPUT="\$STARTFILE;\$ENDFILE;\$INFO"
+                echo "\$OUTPUT"
+            }
+            export -f getStatsAndResolveSymlinks
+            """
+            .stripIndent(true)
+
     K8sWrapperBuilder(TaskRun task, K8sConfig.Storage storage) {
         super(task)
         this.storage = storage
@@ -69,7 +82,8 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
     protected String getLaunchCommand(String interpreter, String env) {
         String cmd = ''
         if( storage ){
-            cmd += "find -L ${targetDir.toString()} -exec stat --format \"%N;%b;%F;%x;%y;%z\" {} \\;"
+            cmd += getStatsAndResolveSymlinks
+            cmd += "find -L \$PWD -exec bash -c \"getStatsAndResolveSymlinks '{}'\" \\;"
             cmd += "> ${workDir.toString()}/.command.infiles\n"
         }
         cmd += super.getLaunchCommand(interpreter, env)
@@ -80,7 +94,8 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
     String getCleanupCmd(String scratch) {
         String cmd = super.getCleanupCmd( scratch )
         if( storage ){
-            cmd += "find -L ${targetDir.toString()} -exec stat --format \"%N;%b;%F;%x;%y;%z\" {} \\;"
+            cmd += getStatsAndResolveSymlinks
+            cmd += "find -L ${targetDir.toString()} -exec bash -c \"getStatsAndResolveSymlinks '{}'\" \\;"
             cmd += "> ${workDir.toString()}/.command.outfiles"
         }
         return cmd

@@ -781,7 +781,7 @@ class FileHelper {
     }
 
 
-    static private Path fakePath( Path path, Path destination ) {
+    static Path fakePath( Path path, Path destination ) {
 
         String pathHelper = path.toString()
         String n1 = FilesEx.getName(destination.getParent())
@@ -819,7 +819,7 @@ class FileHelper {
         final matcher = getPathMatcherFor("$syntax:${filePattern}", folder.fileSystem)
         final singleParam = action.getMaximumNumberOfParameters() == 1
 
-        final File outfiles = new File( folder.toString() + File.separatorChar + ".command.outfiles" )
+        final File outfiles = folder.resolve(".command.outfiles").toFile()
         final boolean outFileExists = outfiles.exists()
 
         def visitor = new SimpleFileVisitor<Path>() {

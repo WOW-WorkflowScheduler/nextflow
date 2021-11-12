@@ -1568,10 +1568,11 @@ class TaskProcessor {
             else {
                 def path = param.glob ? splitter.strip(filePattern) : filePattern
                 def file = workDir.resolve(path)
-                def outfiles = new File( workDir.toString() + File.separatorChar + ".command.outfiles" )
+                def outfiles = workDir.resolve( ".command.outfiles" ).toFile()
                 def exists
                 if( outfiles.exists() ){
-                    exists = LocalFileWalker.exists( workDir, file, param.followLinks ? LinkOption.NOFOLLOW_LINKS : null )
+                    file = LocalFileWalker.exists( outfiles, file, workDir, param.followLinks ? LinkOption.NOFOLLOW_LINKS : null )
+                    exists = file != null
                 } else {
                     exists = param.followLinks ? file.exists() : file.exists(LinkOption.NOFOLLOW_LINKS)
                 }
