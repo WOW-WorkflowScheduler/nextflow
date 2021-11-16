@@ -136,6 +136,7 @@ class K8sSchedulerClient {
                 post.setRequestMethod( "POST" )
                 post.setDoOutput(true)
                 post.setRequestProperty("Content-Type", "application/json")
+                data.dns = getDNS()
                 String message = JsonOutput.toJson( data )
                 post.getOutputStream().write(message.getBytes("UTF-8"))
                 int responseCode = post.getResponseCode()
