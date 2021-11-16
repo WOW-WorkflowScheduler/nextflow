@@ -53,8 +53,9 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
         super(task)
         this.storage = storage
         if( storage ){
-            switch (storage.getType().toLowerCase()) {
+            switch (storage.getCopyStrategy().toLowerCase()) {
                 case 'copy':
+                case 'ftp':
                     if ( !this.scratch ){
                         //Reduce amount of local data
                         this.scratch = true

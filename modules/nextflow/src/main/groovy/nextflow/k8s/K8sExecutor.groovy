@@ -16,7 +16,6 @@
 
 package nextflow.k8s
 
-import groovy.json.JsonOutput
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
 import groovy.transform.PackageScope
@@ -101,7 +100,8 @@ class K8sExecutor extends Executor {
             Map data = [
                     workDir : k8sConfig.getStorage().getWorkdir(),
                     localClaims : podOptions.hostMount,
-                    volumeClaims : podOptions.volumeClaims
+                    volumeClaims : podOptions.volumeClaims,
+                    copyStrategy : k8sConfig.getStorage().getCopyStrategy()
             ]
 
             schedulerClient.registerScheduler( data )

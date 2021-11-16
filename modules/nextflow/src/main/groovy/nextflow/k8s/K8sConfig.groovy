@@ -390,8 +390,8 @@ class K8sConfig implements Map<String,Object> {
             this.localClaims = localClaims
         }
 
-        String getType() {
-            target.type as String ?: 'copy'
+        String getCopyStrategy() {
+            target.copyStrategy as String ?: 'ftp'
         }
 
         String getWorkdir() {
