@@ -33,6 +33,7 @@ import nextflow.k8s.model.PodSecurityContext
 import nextflow.k8s.model.PodVolumeClaim
 import nextflow.k8s.model.ResourceType
 import nextflow.util.Duration
+import nextflow.processor.TaskRun
 import java.nio.file.Path
 
 /**
@@ -407,6 +408,10 @@ class K8sConfig implements Map<String,Object> {
 
         String getImageName() {
             target.imageName ?: 'alpine/k8s:1.20.7'
+        }
+
+        String getCmd() {
+            target.cmd as String ?: "./$TaskRun.CMD_INIT_RUN"
         }
 
     }
