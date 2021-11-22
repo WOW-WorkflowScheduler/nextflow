@@ -165,7 +165,6 @@ class K8sExecutor extends Executor {
                                         containers: [ [
                                                               name: name,
                                                               image: k8sConfig.getStorage().getImageName(),
-                                                              command: ['/bin/sh','-c', 'sleep infinity'],
                                                               volumeMounts: mounts,
                                                               imagePullPolicy : 'IfNotPresent'
                                                       ] ],
