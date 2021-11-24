@@ -350,7 +350,9 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
                 schedulerParams : [:],
                 name : task.name,
                 task : name,
-                stageInMode : task.getConfig().stageInMode
+                stageInMode : task.getConfig().stageInMode,
+                cpus : task.config.getCpus(),
+                memoryInBytes : task.config.getMemory().toBytes()
         ]
 
 
