@@ -57,7 +57,9 @@ class K8sExecutor extends Executor {
     /**
      * Name of the created daemonSet
      */
-    private String daemonSet = null;
+    private String daemonSet = null
+
+    private K8sSchedulerBatch schedulerBatch = null
 
     protected K8sClient getClient() {
         client
@@ -96,6 +98,7 @@ class K8sExecutor extends Executor {
         if( schedulerConfig ) {
             schedulerClient = new K8sSchedulerClient(schedulerConfig, k8sConfig.getNamespace(), session.runName, client,
                     k8sConfig.getPodOptions().getHostMount(), k8sConfig.getPodOptions().getVolumeClaims())
+            this.schedulerBatch.setSchedulerClient( schedulerClient )
             final PodOptions podOptions = k8sConfig.getPodOptions()
             Map data = [
                     workDir : k8sConfig.getStorage().getWorkdir(),
@@ -226,7 +229,8 @@ class K8sExecutor extends Executor {
      */
     @Override
     protected TaskMonitor createTaskMonitor() {
-        TaskPollingMonitor.create(session, name, 100, Duration.of('5 sec'))
+        if ( k8sConfig.getScheduler() ) this.schedulerBatch = new K8sSchedulerBatch()
+        TaskPollingMonitor.create(session, name, 100, Duration.of('5 sec'), this.schedulerBatch )
     }
 
     /**

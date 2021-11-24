@@ -41,6 +41,7 @@ class K8sSchedulerClient {
     private final Collection<PodHostMount> hostMounts
     private final Collection<PodVolumeClaim> volumeClaims
     private String ip
+    private int tasksInBatch = 0;
 
 
     K8sSchedulerClient(K8sConfig.K8sScheduler schedulerConfig, String namespace, String runName, K8sClient k8sClient,
@@ -176,9 +177,33 @@ class K8sSchedulerClient {
         if( responseCode != 200 ){
             throw new IllegalStateException( "Got code: ${responseCode} from nextflow scheduler, while registering task: ${config.name}" )
         }
+        tasksInBatch++
         Map response = new JsonSlurper().parse(post.getInputStream()) as Map
         return response
 
+    }
+
+    private void batch( String command, Integer count = null ){
+        HttpURLConnection post = new URL("${getDNS()}/scheduler/${command}Batch/$namespace/$runName").openConnection() as HttpURLConnection
+        post.setRequestMethod( "POST" )
+        if ( count ){
+            post.setDoOutput(true)
+            post.setRequestProperty("Content-Type", "application/json")
+            post.getOutputStream().write("$count".getBytes("UTF-8"));
+        }
+        int responseCode = post.getResponseCode()
+        if( responseCode != 200 ){
+            throw new IllegalStateException( "Got code: ${responseCode} from nextflow scheduler, while ${command}ing batch" )
+        }
+    }
+
+    void startBatch(){
+        tasksInBatch = 0
+        batch('start')
+    }
+
+    void endBatch(){
+        batch('end', tasksInBatch)
     }
 
     Map getTaskState( String podname ){
