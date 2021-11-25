@@ -183,13 +183,13 @@ class K8sSchedulerClient {
 
     }
 
-    private void batch( String command, Integer count = null ){
+    private void batch( String command ){
         HttpURLConnection post = new URL("${getDNS()}/scheduler/${command}Batch/$namespace/$runName").openConnection() as HttpURLConnection
         post.setRequestMethod( "POST" )
-        if ( count ){
+        if ( command == 'end' ){
             post.setDoOutput(true)
             post.setRequestProperty("Content-Type", "application/json")
-            post.getOutputStream().write("$count".getBytes("UTF-8"));
+            post.getOutputStream().write("$tasksInBatch".getBytes("UTF-8"));
         }
         int responseCode = post.getResponseCode()
         if( responseCode != 200 ){
@@ -203,7 +203,7 @@ class K8sSchedulerClient {
     }
 
     void endBatch(){
-        batch('end', tasksInBatch)
+        batch('end')
     }
 
     Map getTaskState( String podname ){
