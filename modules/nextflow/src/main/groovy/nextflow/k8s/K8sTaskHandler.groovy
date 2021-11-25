@@ -16,6 +16,8 @@
 
 package nextflow.k8s
 
+import nextflow.script.params.InParam
+
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -323,16 +325,27 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         k8sConfig.getAnnotations()
     }
 
-    private extractValue( Object input ){
+    private void extractValue(
+            List<Object> booleanInputs,
+            List<Object> numberInputs,
+            List<Object> stringInputs,
+            List<Object> fileInputs,
+            String key,
+            Object input
+    ){
         if( input instanceof Collection ){
-            return input.collect { extractValue(it) }
+            input.forEach { extractValue(booleanInputs, numberInputs, stringInputs, fileInputs, key, it) }
         } else if( input instanceof FileHolder ){
-            return [ storePath : input.storePath.toString(), sourceObj : input.sourceObj.toString(), stageName : input.stageName.toString() ]
-        } else if ( input instanceof Boolean || input instanceof Number || input instanceof String ) {
-            return input
+            fileInputs.add([ name : key, value : [ storePath : input.storePath.toString(), sourceObj : input.sourceObj.toString(), stageName : input.stageName.toString() ]])
+        } else if ( input instanceof Boolean ) {
+            booleanInputs.add( [ name : key, value : input] )
+        } else if ( input instanceof Number ) {
+            numberInputs.add( [ name : key, value : input] )
+        } else if ( input instanceof String ) {
+            stringInputs.add( [ name : key, value : input] )
         } else {
             log.error ( "input was of class ${input.class}: $input")
-            return input
+            throw new IllegalArgumentException( "input was of class ${input.class}: $input" )
         }
 
     }
@@ -344,15 +357,29 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
             name = name.substring(0 , name.lastIndexOf( ' ' ) )
         }
 
+        final List<Object> booleanInputs = new LinkedList<>()
+        final List<Object> numberInputs = new LinkedList<>()
+        final List<Object> stringInputs = new LinkedList<>()
+        final List<Object> fileInputs = new LinkedList<>()
+
+        for ( entry in task.getInputs() ){
+            extractValue( booleanInputs, numberInputs, stringInputs, fileInputs, entry.getKey().name , entry.getValue() )
+        }
+
         Map config = [
                 hash : "nf-${task.hash}",
-                inputs : task.getInputs().collect {[ name : it.key.name, value : extractValue(it.value)] },
+                inputs : [
+                        booleanInputs : booleanInputs,
+                        numberInputs  : numberInputs,
+                        stringInputs  : stringInputs,
+                        fileInputs    : fileInputs
+                ],
                 schedulerParams : [:],
                 name : task.name,
                 task : name,
                 stageInMode : task.getConfig().stageInMode,
                 cpus : task.config.getCpus(),
-                memoryInBytes : task.config.getMemory().toBytes()
+                memoryInBytes : task.config.getMemory()?.toBytes()
         ]
 
 
