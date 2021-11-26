@@ -326,7 +326,7 @@ class K8sConfig implements Map<String,Object> {
             throw new AbortOperationException("Kubernetes `projectDir` must be a path mounted as a persistent volume -- projectDir=$projectDir; volumes=${getClaimPaths().join(', ')}")
 
         //The nextflow project/workflow has to be on a shared drive
-        if ( pipelineName && !findVolumeClaimByPath(pipelineName) )
+        if ( pipelineName && pipelineName[0] == '/' && !findVolumeClaimByPath(pipelineName) )
             throw new AbortOperationException("Kubernetes `pipelineName` must be a path mounted as a persistent volume -- projectDir=$pipelineName; volumes=${getClaimPaths().join(', ')}")
 
         if( getStorage() && !findLocalVolumeClaimByPath(getStorage().getWorkdir()) )
