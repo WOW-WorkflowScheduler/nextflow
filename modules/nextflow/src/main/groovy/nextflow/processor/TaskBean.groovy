@@ -57,6 +57,8 @@ class TaskBean implements Serializable, Cloneable {
 
     Path targetDir
 
+    Path localWorkDir
+
     String script
 
     List<String> shell
@@ -159,6 +161,7 @@ class TaskBean implements Serializable, Cloneable {
         this.stageInMode = task.config.getStageInMode()
         this.stageOutMode = task.config.getStageOutMode()
         this.hash = task.hash
+        this.localWorkDir = null
 
         this.resourceLabels = task.config.getResourceLabels()
     }

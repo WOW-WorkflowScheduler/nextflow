@@ -61,10 +61,10 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
                         this.scratch = true
                         this.stageOutMode = 'move'
                     }
-                    if ( this.targetDir == this.workDir ){
-                        this.targetDir = FileHelper.getWorkFolder( storage.getWorkdir() as Path, this.getHash() )
-                    }
                     break
+            }
+            if ( !this.targetDir || workDir == targetDir ) {
+                this.localWorkDir = FileHelper.getWorkFolder(storage.getWorkdir() as Path, this.getHash())
             }
         }
     }
@@ -82,7 +82,7 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
     @Override
     protected String getLaunchCommand(String interpreter, String env) {
         String cmd = ''
-        if( storage ){
+        if( storage && localWorkDir ){
             cmd += getStatsAndResolveSymlinks
             cmd += "find -L \$PWD -exec bash -c \"getStatsAndResolveSymlinks '{}'\" \\;"
             cmd += "> ${workDir.toString()}/.command.infiles\n"
@@ -94,9 +94,9 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
     @Override
     String getCleanupCmd(String scratch) {
         String cmd = super.getCleanupCmd( scratch )
-        if( storage ){
+        if( storage && localWorkDir ){
             cmd += getStatsAndResolveSymlinks
-            cmd += "find -L ${targetDir.toString()} -exec bash -c \"getStatsAndResolveSymlinks '{}'\" \\;"
+            cmd += "find -L ${localWorkDir.toString()} -exec bash -c \"getStatsAndResolveSymlinks '{}'\" \\;"
             cmd += "> ${workDir.toString()}/.command.outfiles"
         }
         return cmd

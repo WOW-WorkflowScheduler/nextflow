@@ -64,7 +64,7 @@ class SimpleFileCopyStrategy implements ScriptFileCopyStrategy {
     SimpleFileCopyStrategy( TaskBean bean ) {
         this.stageinMode = bean.stageInMode
         this.stageoutMode = bean.stageOutMode
-        this.targetDir = bean.targetDir
+        this.targetDir = bean.localWorkDir ?: bean.targetDir
         this.workDir = bean.workDir
     }
 
