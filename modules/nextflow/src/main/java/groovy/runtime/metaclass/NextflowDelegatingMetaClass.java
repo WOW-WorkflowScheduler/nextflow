@@ -17,8 +17,10 @@
 package groovy.runtime.metaclass;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 
+import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import nextflow.file.FileHelper;
 
@@ -59,6 +61,21 @@ public class NextflowDelegatingMetaClass extends groovy.lang.DelegatingMetaClass
         }
         else if( obj instanceof ChannelFactory ) {
             return ((ChannelFactory) obj).invokeExtensionMethod(methodName, args);
+        }
+
+        //This is needed, to force downloading the file, if it is not on the node
+        if( obj.getClass().toString().endsWith("nextflow.k8s.localdata.LocalPath") ){
+            Method[] methods = obj.getClass().getMethods();
+            boolean hasMethod = false;
+            for (Method m : methods) {
+                if (m.getName().equals(methodName)) {
+                    hasMethod = true;
+                    break;
+                }
+            }
+            if( !hasMethod ){
+                return ((GroovyObject) obj).invokeMethod( methodName, args );
+            }
         }
 
         return delegate.invokeMethod(obj, methodName, args);
