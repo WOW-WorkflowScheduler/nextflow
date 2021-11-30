@@ -17,6 +17,7 @@
 package nextflow.k8s
 
 import nextflow.script.params.InParam
+import org.codehaus.groovy.runtime.GStringImpl
 
 import java.nio.file.Files
 import java.nio.file.Path
@@ -343,6 +344,8 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
             numberInputs.add( [ name : key, value : input] )
         } else if ( input instanceof String ) {
             stringInputs.add( [ name : key, value : input] )
+        } else if ( input instanceof GStringImpl ) {
+            stringInputs.add( [ name : key, value : ((GStringImpl) input).toString()] )
         } else {
             log.error ( "input was of class ${input.class}: $input")
             throw new IllegalArgumentException( "input was of class ${input.class}: $input" )
