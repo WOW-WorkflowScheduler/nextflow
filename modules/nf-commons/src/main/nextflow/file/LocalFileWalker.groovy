@@ -30,15 +30,8 @@ class LocalFileWalker {
         file.withReader { reader ->
             while ((line = reader.readLine()) != null) {
                 String[] data = line.split(';')
-                int i = 0
-                if ( data.length != 7 ) throw new RuntimeException( "Can not parse row (7 columns required): \"" + line + "\"" )
-                String path = data[i++]
-                String symlinkTo = data[i++]
-                Long bytes = data[i++] as Long
-                String fileType = data[i++]
-                FileTime creationDate = fileTimeFromString(data[i++])
-                FileTime accessDate = fileTimeFromString(data[i++])
-                FileTime modificationDate = fileTimeFromString(data[i++])
+
+                String path = data[0]
 
                 if( path.startsWith('\'') && path.endsWith('\'') ) {
                     path = path.substring( 1, path.length() - 1 )
@@ -57,24 +50,17 @@ class LocalFileWalker {
                     skip = false
                 }
 
-                Boolean link = symlinkTo ? true : false
+                FileAttributes attributes = new FileAttributes( data )
 
-                if (fileType == 'directory') {
-                    FileAttributes attributes = new FileAttributes(
-                            true, link, bytes, creationDate, accessDate, modificationDate
-                    )
-                    def visitDirectory = visitor.preVisitDirectory(Paths.get(path), attributes);
+                Path p = Paths.get(path)
+                if ( attributes.isDirectory() ) {
+                    def visitDirectory = visitor.preVisitDirectory( p, attributes )
                     if( visitDirectory == FileVisitResult.SKIP_SUBTREE ){
                         skip = true
                         parent = path
                     }
-                } else if ( fileType.contains( 'file' ) ) {
-                    FileAttributes attributes = new FileAttributes(
-                            false, link, bytes, creationDate, accessDate, modificationDate
-                    )
-                    visitor.visitFile(Paths.get(path), attributes)
                 } else {
-                    log.error( "Unknown type: $fileType" )
+                    visitor.visitFile( p, attributes)
                 }
             }
         }
@@ -100,24 +86,24 @@ class LocalFileWalker {
         private final boolean directory
         private final boolean link
         private final long size
+        private final String fileType
         private final FileTime creationDate
         private final FileTime accessDate
         private final FileTime modificationDate
 
-        FileAttributes(
-                Boolean directory,
-                Boolean link,
-                Long size,
-                FileTime creationDate,
-                FileTime accessDate,
-                FileTime modificationDate
-        ) {
-            this.directory = directory
-            this.link = link
-            this.size = size
-            this.creationDate = creationDate
-            this.accessDate = accessDate
-            this.modificationDate = modificationDate
+        FileAttributes( String[] data ) {
+            int i = 1
+            if ( data.length != 7 ) throw new RuntimeException( "Can not parse row (7 columns required): ${data.join(',')}" )
+            this.link = data[i++].isEmpty()
+            this.size = data[i++] as Long
+            this.fileType = data[i++]
+            this.creationDate = fileTimeFromString(data[i++])
+            this.accessDate = fileTimeFromString(data[i++])
+            this.modificationDate = fileTimeFromString(data[i])
+            this.directory = fileType == 'directory'
+            if ( !directory && !fileType.contains( 'file' ) ){
+                log.error( "Unknown type: $fileType" )
+            }
         }
 
         @Override
