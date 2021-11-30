@@ -52,7 +52,11 @@ class K8sExecutor extends Executor {
      */
     private K8sClient client
 
-    private K8sSchedulerClient schedulerClient
+    private static K8sSchedulerClient schedulerClient
+
+    static getK8sSchedulerClient(){
+        schedulerClient
+    }
 
     /**
      * Name of the created daemonSet

@@ -12,9 +12,12 @@ import java.nio.file.Paths
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.attribute.FileTime
 import java.text.SimpleDateFormat
+import java.util.function.BiFunction
 
 @Slf4j
 class LocalFileWalker {
+
+    public static BiFunction<Path, FileAttributes,Path> createLocalPath;
 
     public static Path walkFileTree(Path start,
                                     Set<FileVisitOption> options,
@@ -52,7 +55,7 @@ class LocalFileWalker {
 
                 FileAttributes attributes = new FileAttributes( data )
 
-                Path p = Paths.get(path)
+                Path p = createLocalPath.apply( Paths.get(path), attributes )
                 if ( attributes.isDirectory() ) {
                     def visitDirectory = visitor.preVisitDirectory( p, attributes )
                     if( visitDirectory == FileVisitResult.SKIP_SUBTREE ){
@@ -172,7 +175,8 @@ class LocalFileWalker {
                     Path currentPath = data[0] as Path
                     log.trace "Compare $currentPath and $fakePath match: ${(currentPath == fakePath)}"
                     if ( currentPath == fakePath ) {
-                        return data[1] ? data[1] as Path : currentPath
+                        Path p = data[1] ? data[1] as Path : currentPath
+                        return createLocalPath.apply( p, new FileAttributes( data ) )
                     } else return null
                 }
                 .filter{ it != null }
