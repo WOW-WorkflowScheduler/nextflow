@@ -17,11 +17,14 @@ package nextflow.k8s.client
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
+import nextflow.file.LocalFileWalker
 import nextflow.k8s.K8sConfig
+import nextflow.k8s.localdata.LocalPath
 import nextflow.k8s.model.PodHostMount
 import nextflow.k8s.model.PodSpecBuilder
 import nextflow.k8s.model.PodVolumeClaim
 
+import java.nio.file.Path
 import java.nio.file.Paths
 
 /**
@@ -52,6 +55,7 @@ class K8sSchedulerClient {
         this.schedulerConfig = schedulerConfig
         this.namespace = namespace ?: 'default'
         this.runName = runName
+        LocalFileWalker.createLocalPath = (Path path, LocalFileWalker.FileAttributes attr) -> LocalPath.toLocalPath( path, this, attr )
     }
 
     private String getDNS(){
@@ -217,6 +221,61 @@ class K8sSchedulerClient {
         }
         Map response = new JsonSlurper().parse(get.getInputStream()) as Map
         return response
+
+    }
+
+    Map getFileLocation( String path ){
+
+        HttpURLConnection get = new URL("${getDNS()}/file/$namespace/$runName").openConnection() as HttpURLConnection
+        get.setRequestMethod( "POST" )
+        get.setDoOutput(true)
+        get.setRequestProperty("Content-Type", "application/json")
+        get.getOutputStream().write("$path".getBytes("UTF-8"));
+        int responseCode = get.getResponseCode()
+        if( responseCode != 200 ){
+            throw new IllegalStateException( "Got code: ${responseCode} from nextflow scheduler, while requesting file location: $path (${get.responseMessage})" )
+        }
+        Map response = new JsonSlurper().parse(get.getInputStream()) as Map
+        return response
+
+    }
+
+    String getDaemonOnNode( String node ){
+
+        HttpURLConnection get = new URL("${getDNS()}/daemon/$namespace/$runName/$node").openConnection() as HttpURLConnection
+        get.setRequestMethod( "GET" )
+        get.setDoOutput(true)
+        int responseCode = get.getResponseCode()
+        if( responseCode != 200 ){
+            throw new IllegalStateException( "Got code: ${responseCode} from nextflow scheduler, while requesting daemon on node: $node" )
+        }
+        String response = new JsonSlurper().parse(get.getInputStream()) as String
+        return response
+
+    }
+
+    void addFileLocation( String path, long size, long timestamp, boolean overwrite, String node = null ){
+
+        String method = overwrite ? 'overwrite' : 'add'
+
+        HttpURLConnection get = new URL("${getDNS()}/file/location/${method}/$namespace/$runName${ node ? "/$node" : ''}").openConnection() as HttpURLConnection
+        get.setRequestMethod( "POST" )
+        get.setDoOutput(true)
+        Map data = [
+            path      : path,
+            size      : size,
+            timestamp : timestamp
+        ]
+        if ( node ){
+            data.node = node
+        }
+        String message = JsonOutput.toJson( data )
+        get.setRequestProperty("Content-Type", "application/json")
+        get.getOutputStream().write(message.getBytes("UTF-8"));
+        int responseCode = get.getResponseCode()
+        if( responseCode != 200 ){
+            throw new IllegalStateException( "Got code: ${responseCode} from nextflow scheduler, while updating file location: $path: $node (${get.responseMessage})" )
+        }
 
     }
 
