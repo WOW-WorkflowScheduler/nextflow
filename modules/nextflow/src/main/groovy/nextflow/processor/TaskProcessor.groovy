@@ -1568,6 +1568,7 @@ class TaskProcessor {
             else {
                 def path = param.glob ? splitter.strip(filePattern) : filePattern
                 def file = workDir.resolve(path)
+                def origFile = file
                 def outfiles = workDir.resolve( ".command.outfiles" ).toFile()
                 def exists
                 if( outfiles.exists() ){
@@ -1579,7 +1580,7 @@ class TaskProcessor {
                 if( exists )
                     result = [file]
                 else
-                    log.debug "Process `${safeTaskName(task)}` is unable to find [${file.class.simpleName}]: `$file` (pattern: `$filePattern`)"
+                    log.debug "Process `${safeTaskName(task)}` is unable to find [${origFile.class.simpleName}]: `$file` (pattern: `$filePattern`)"
             }
 
             if( result )
