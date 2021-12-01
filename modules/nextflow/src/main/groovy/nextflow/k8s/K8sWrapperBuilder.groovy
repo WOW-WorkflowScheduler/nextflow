@@ -36,19 +36,6 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
 
     K8sConfig.Storage storage
 
-    static String getStatsAndResolveSymlinks = """\
-            getStatsAndResolveSymlinks () {
-                STARTFILE="\$1"
-                ENDFILE="\$(readlink -f "\$STARTFILE")"
-                INFO="\$(stat -c "%s;%F;%w;%x;%y" "\$ENDFILE")"
-                [ "\$STARTFILE" = "\$ENDFILE" ] && ENDFILE=""
-                OUTPUT="\$STARTFILE;\$ENDFILE;\$INFO"
-                echo "\$OUTPUT"
-            }
-            export -f getStatsAndResolveSymlinks
-            """
-            .stripIndent(true)
-
     K8sWrapperBuilder(TaskRun task, K8sConfig.Storage storage) {
         super(task)
         this.storage = storage
@@ -80,10 +67,27 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
     protected K8sWrapperBuilder() {}
 
     @Override
+    protected Map<String,String> makeBinding() {
+        def binding = super.makeBinding()
+        binding.K8sResolveSymlinks = """\
+            getStatsAndResolveSymlinks() {
+                local STARTFILE="\$1"
+                local ENDFILE="\$(readlink -f "\$STARTFILE")"
+                [ -f "\$ENDFILE" ] && local EXISTS=1 || local EXISTS=0
+                local INFO="\$(stat -c "%s;%F;%w;%x;%y" "\$ENDFILE")"
+                [ "\$STARTFILE" = "\$ENDFILE" ] && local ENDFILE=""
+                local OUTPUT="\$STARTFILE;\$EXISTS;\$ENDFILE;\$INFO"
+                echo "\$OUTPUT"
+            }
+            export -f getStatsAndResolveSymlinks
+            """.stripIndent(true)
+        return binding
+    }
+
+    @Override
     protected String getLaunchCommand(String interpreter, String env) {
         String cmd = ''
         if( storage && localWorkDir ){
-            cmd += getStatsAndResolveSymlinks
             cmd += "find -L \$PWD -exec bash -c \"getStatsAndResolveSymlinks '{}'\" \\;"
             cmd += "> ${workDir.toString()}/.command.infiles\n"
         }
@@ -95,7 +99,6 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
     String getCleanupCmd(String scratch) {
         String cmd = super.getCleanupCmd( scratch )
         if( storage && localWorkDir ){
-            cmd += getStatsAndResolveSymlinks
             cmd += "find -L ${localWorkDir.toString()} -exec bash -c \"getStatsAndResolveSymlinks '{}'\" \\;"
             cmd += "> ${workDir.toString()}/.command.outfiles"
         }

@@ -96,7 +96,17 @@ class LocalFileWalker {
 
         FileAttributes( String[] data ) {
             int i = 1
-            if ( data.length != 7 ) throw new RuntimeException( "Can not parse row (7 columns required): ${data.join(',')}" )
+            if ( data.length != 8 && data[1] != "0" ) throw new RuntimeException( "Cannot parse row (8 columns required): \"" + line + "\"" )
+            boolean fileExists = data[i++] == "1"
+            if ( !fileExists ) {
+                this.link = true
+                this.size = 0
+                this.fileType = null
+                this.creationDate = null
+                this.accessDate = null
+                this.modificationDate = null
+                return
+            }
             this.link = data[i++].isEmpty()
             this.size = data[i++] as Long
             this.fileType = data[i++]
