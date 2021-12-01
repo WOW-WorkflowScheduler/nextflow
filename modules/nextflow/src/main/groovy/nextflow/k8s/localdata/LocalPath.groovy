@@ -1,6 +1,7 @@
 package nextflow.k8s.localdata
 
 import groovy.util.logging.Slf4j
+import nextflow.file.FileHelper
 import nextflow.file.LocalFileWalker
 import nextflow.k8s.client.K8sSchedulerClient
 import org.codehaus.groovy.runtime.IOGroovyMethods
@@ -16,19 +17,21 @@ class LocalPath implements Path {
     private final LocalFileWalker.FileAttributes attributes;
     private final K8sSchedulerClient client
     private boolean wasDownloaded = false
+    private Path workDir
 
-    private LocalPath(Path path, K8sSchedulerClient client, LocalFileWalker.FileAttributes attributes) {
+    private LocalPath(Path path, K8sSchedulerClient client, LocalFileWalker.FileAttributes attributes, Path workDir ) {
         this.path = path
         this.client = client
         this.attributes = attributes
+        this.workDir = workDir
     }
 
     LocalPath toLocalPath( Path path, LocalFileWalker.FileAttributes attributes = null ){
-        toLocalPath( path, client, attributes )
+        toLocalPath( path, client, attributes, workDir )
     }
 
-    static LocalPath toLocalPath( Path path, K8sSchedulerClient client, LocalFileWalker.FileAttributes attributes ){
-        ( path instanceof  LocalPath ) ? path as LocalPath : new LocalPath( path, client, attributes )
+    static LocalPath toLocalPath( Path path, K8sSchedulerClient client, LocalFileWalker.FileAttributes attributes, Path workDir ){
+        ( path instanceof  LocalPath ) ? path as LocalPath : new LocalPath( path, client, attributes, workDir )
     }
 
     FtpClient getConnection( final String node, String daemon ){
@@ -46,6 +49,16 @@ class LocalPath implements Path {
                 daemon = client.getDaemonOnNode(node)
             }
         }
+    }
+
+    /**
+     *
+     * @return A path located in the original workdir
+     */
+    Path fakePath(){
+        Path fake = FileHelper.fakePath( path, workDir )
+        log.info( "Fake path: $path to $fake")
+        return fake
     }
 
     String getText(){

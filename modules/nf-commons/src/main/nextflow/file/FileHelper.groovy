@@ -873,7 +873,7 @@ class FileHelper {
         }
 
         if( outFileExists ){
-            LocalFileWalker.walkFileTree(folder, walkOptions, Integer.MAX_VALUE, visitor)
+            LocalFileWalker.walkFileTree(folder, walkOptions, Integer.MAX_VALUE, visitor, folder)
         } else {
             Files.walkFileTree(folder, walkOptions, Integer.MAX_VALUE, visitor)
         }

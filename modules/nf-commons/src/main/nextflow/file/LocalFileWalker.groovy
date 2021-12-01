@@ -12,17 +12,18 @@ import java.nio.file.Paths
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.attribute.FileTime
 import java.text.SimpleDateFormat
-import java.util.function.BiFunction
 
 @Slf4j
 class LocalFileWalker {
 
-    public static BiFunction<Path, FileAttributes,Path> createLocalPath;
+    public static TriFunction createLocalPath;
 
     public static Path walkFileTree(Path start,
                                     Set<FileVisitOption> options,
                                     int maxDepth,
-                                    FileVisitor<? super Path> visitor)
+                                    FileVisitor<? super Path> visitor,
+                                    Path workDir
+        )
     {
 
         String parent = null
@@ -55,7 +56,7 @@ class LocalFileWalker {
 
                 FileAttributes attributes = new FileAttributes( data )
 
-                Path p = createLocalPath.apply( Paths.get(path), attributes )
+                Path p = createLocalPath.apply( Paths.get(path), attributes, workDir )
                 if ( attributes.isDirectory() ) {
                     def visitDirectory = visitor.preVisitDirectory( p, attributes )
                     if( visitDirectory == FileVisitResult.SKIP_SUBTREE ){
@@ -186,7 +187,7 @@ class LocalFileWalker {
                     log.trace "Compare $currentPath and $fakePath match: ${(currentPath == fakePath)}"
                     if ( currentPath == fakePath ) {
                         Path p = data[1] ? data[1] as Path : currentPath
-                        return createLocalPath.apply( p, new FileAttributes( data ) )
+                        return createLocalPath.apply( p, new FileAttributes( data ), workDir )
                     } else return null
                 }
                 .filter{ it != null }
@@ -194,6 +195,10 @@ class LocalFileWalker {
 
         return first.isPresent() ? first.get() : null
 
+    }
+
+    static interface TriFunction {
+        Path apply( Path path, FileAttributes attributes, Path workDir );
     }
 
 }
