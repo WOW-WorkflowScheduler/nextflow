@@ -407,4 +407,9 @@ class LocalPath implements Path {
     int compareTo(Path other) {
         path.compareTo( other)
     }
+
+    @Override
+    String toString() {
+        path.toString()
+    }
 }
