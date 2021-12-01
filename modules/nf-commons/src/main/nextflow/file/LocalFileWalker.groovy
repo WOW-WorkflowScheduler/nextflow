@@ -16,6 +16,15 @@ import java.text.SimpleDateFormat
 @Slf4j
 class LocalFileWalker {
 
+    static final int VIRTUAL_PATH = 0
+    static final int FILE_EXISTS = 1
+    static final int REAL_PATH = 2
+    static final int SIZE = 3
+    static final int FILE_TYPE = 4
+    static final int CREATION_DATE = 5
+    static final int ACCESS_DATE = 6
+    static final int MODIFICATION_DATE = 7
+
     public static TriFunction createLocalPath;
 
     public static Path walkFileTree(Path start,
@@ -35,7 +44,7 @@ class LocalFileWalker {
             while ((line = reader.readLine()) != null) {
                 String[] data = line.split(';')
 
-                String path = data[0]
+                String path = data[ VIRTUAL_PATH ]
 
                 if( path.startsWith('\'') && path.endsWith('\'') ) {
                     path = path.substring( 1, path.length() - 1 )
@@ -96,10 +105,9 @@ class LocalFileWalker {
         private final FileTime modificationDate
 
         FileAttributes( String[] data ) {
-            int i = 1
-            if ( data.length != 8 && data[1] != "0" ) throw new RuntimeException( "Cannot parse row (8 columns required): \"" + line + "\"" )
-            boolean fileExists = data[i++] == "1"
-            if ( !fileExists ) {
+            if ( data.length != 8 && data[ FILE_EXISTS ] != "0" ) throw new RuntimeException( "Cannot parse row (8 columns required): ${data.join(',')}" )
+            boolean fileExists = data[ FILE_EXISTS ] == "1"
+            if ( data.length != 8 ) {
                 this.link = true
                 this.size = 0
                 this.fileType = null
@@ -108,12 +116,12 @@ class LocalFileWalker {
                 this.modificationDate = null
                 return
             }
-            this.link = data[i++].isEmpty()
-            this.size = data[i++] as Long
-            this.fileType = data[i++]
-            this.creationDate = fileTimeFromString(data[i++])
-            this.accessDate = fileTimeFromString(data[i++])
-            this.modificationDate = fileTimeFromString(data[i])
+            this.link = data[ REAL_PATH ].isEmpty()
+            this.size = data[ SIZE ] as Long
+            this.fileType = data[ FILE_TYPE ]
+            this.creationDate = fileTimeFromString(data[ CREATION_DATE ])
+            this.accessDate = fileTimeFromString(data[ ACCESS_DATE ])
+            this.modificationDate = fileTimeFromString(data[ MODIFICATION_DATE ])
             this.directory = fileType == 'directory'
             if ( !directory && !fileType.contains( 'file' ) ){
                 log.error( "Unknown type: $fileType" )
@@ -183,10 +191,10 @@ class LocalFileWalker {
                 .parallel()
                 .map {line ->
                     String[] data = line.split(';')
-                    Path currentPath = data[0] as Path
+                    Path currentPath = data[ VIRTUAL_PATH ] as Path
                     log.trace "Compare $currentPath and $fakePath match: ${(currentPath == fakePath)}"
                     if ( currentPath == fakePath ) {
-                        Path p = data[1] ? data[1] as Path : currentPath
+                        Path p = data[ REAL_PATH ] ? data[ REAL_PATH ] as Path : currentPath
                         return createLocalPath.apply( p, new FileAttributes( data ), workDir )
                     } else return null
                 }
