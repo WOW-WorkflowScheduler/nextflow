@@ -508,7 +508,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
 
     boolean schedulerPostProcessingHasFinished(){
         Map state = schedulerClient.getTaskState(podName)
-        return (!state.state) ?: state.state.toString() == "FINISHED"
+        return (!state.state) ?: ["FINISHED", "FINISHED_WITH_ERROR", "DELETED"].contains( state.state.toString() )
     }
 
     @Override
