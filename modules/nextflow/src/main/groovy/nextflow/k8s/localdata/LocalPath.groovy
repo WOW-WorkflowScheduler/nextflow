@@ -9,6 +9,7 @@ import sun.net.ftp.FtpClient
 
 import java.nio.charset.Charset
 import java.nio.file.*
+import java.nio.file.attribute.BasicFileAttributes
 
 @Slf4j
 class LocalPath implements Path {
@@ -424,5 +425,9 @@ class LocalPath implements Path {
     @Override
     String toString() {
         path.toString()
+    }
+
+    BasicFileAttributes getAttributes(){
+        attributes
     }
 }
