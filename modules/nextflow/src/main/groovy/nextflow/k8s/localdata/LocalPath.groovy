@@ -310,12 +310,12 @@ class LocalPath implements Path {
 
     @Override
     Path getRoot() {
-        toLocalPath( path.getRoot() )
+        path.getRoot()
     }
 
     @Override
     Path getFileName() {
-        toLocalPath( path.getFileName() )
+        path.getFileName()
     }
 
     @Override
@@ -399,7 +399,7 @@ class LocalPath implements Path {
 
     @Override
     Path toRealPath(LinkOption... options) throws IOException {
-        toLocalPath( path.toRealPath( options ) )
+        attributes.destination ? toLocalPath( attributes.destination ) : toLocalPath( path.toRealPath( options ) )
     }
 
     @Override
