@@ -35,7 +35,7 @@ class LocalPath implements Path {
         ( path instanceof  LocalPath ) ? path as LocalPath : new LocalPath( path, client, attributes, workDir )
     }
 
-    FtpClient getConnection( final String node, String daemon ){
+    private FtpClient getConnection( final String node, String daemon ){
         int trial = 0
         while ( true ) {
             try {
@@ -380,12 +380,14 @@ class LocalPath implements Path {
 
     @Override
     Path resolve(Path other) {
-        toLocalPath( path.normalize() )
+        //TODO other attributes
+        toLocalPath( path.resolve( other ) )
     }
 
     @Override
     Path resolve(String other) {
-        path.resolve( other )
+        //TODO other attributes
+        toLocalPath( path.resolve( other ) )
     }
 
     @Override
@@ -434,7 +436,10 @@ class LocalPath implements Path {
 
     @Override
     int compareTo(Path other) {
-        path.compareTo( other)
+        if ( other instanceof LocalPath ){
+            return path.compareTo( ((LocalPath) other).path )
+        }
+        path.compareTo( other )
     }
 
     @Override
