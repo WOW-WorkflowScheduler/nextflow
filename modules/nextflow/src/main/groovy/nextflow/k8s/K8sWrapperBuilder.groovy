@@ -89,7 +89,7 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
         String cmd = ''
         if( storage && localWorkDir ){
             cmd += "find -L \$PWD -exec bash -c \"getStatsAndResolveSymlinks '{}'\" \\;"
-            cmd += "> ${workDir.toString()}/.command.infiles\n"
+            cmd += "> ${workDir.toString()}/.command.infiles || true\n"
         }
         cmd += super.getLaunchCommand(interpreter, env)
         return cmd
@@ -100,7 +100,7 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
         String cmd = super.getCleanupCmd( scratch )
         if( storage && localWorkDir ){
             cmd += "find -L ${localWorkDir.toString()} -exec bash -c \"getStatsAndResolveSymlinks '{}'\" \\;"
-            cmd += "> ${workDir.toString()}/.command.outfiles"
+            cmd += "> ${workDir.toString()}/.command.outfiles || true"
         }
         return cmd
     }
