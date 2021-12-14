@@ -181,7 +181,7 @@ class LocalFileWalker {
         if( sc.hasNext() )
             rootDirString = sc.next().split(";")[0]
         else
-            throw new IllegalStateException( "Outputfile is empty: " + outfile )
+           return null
 
         final Path rootDir = rootDirString as Path
         final Path fakePath = FileHelper.fakePath( file, rootDir )
