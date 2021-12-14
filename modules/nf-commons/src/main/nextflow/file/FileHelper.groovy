@@ -786,9 +786,16 @@ class FileHelper {
         String pathHelper = path.toString()
         String n1 = FilesEx.getName(destination.getParent())
         String n2 = FilesEx.getName(destination)
-        String cdir = "$n1/$n2"
+        String cdir = (n1 as Path).resolve(n2).toString()
 
-        return destination.getParent().getParent().resolve(pathHelper.substring(pathHelper.indexOf( cdir )))
+        int index = pathHelper.indexOf( cdir )
+
+        if( index == -1 ){
+            log.error("Cannot calculate fake path for path: $path to dest.: $destination cdir: $cdir")
+            return path
+        }
+
+        return destination.getParent().getParent().resolve(pathHelper.substring( index ))
     }
 
 
