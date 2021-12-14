@@ -103,10 +103,12 @@ class LocalFileWalker {
         private final FileTime creationDate
         private final FileTime accessDate
         private final FileTime modificationDate
+        private final Path destination
 
         FileAttributes( String[] data ) {
             if ( data.length != 8 && data[ FILE_EXISTS ] != "0" ) throw new RuntimeException( "Cannot parse row (8 columns required): ${data.join(',')}" )
             boolean fileExists = data[ FILE_EXISTS ] == "1"
+            destination = data.length > REAL_PATH && data[ REAL_PATH ] ? data[ REAL_PATH ] as Path : null
             if ( data.length != 8 ) {
                 this.link = true
                 this.size = 0
@@ -172,6 +174,11 @@ class LocalFileWalker {
         Object fileKey() {
             return null
         }
+
+        Path getDestination(){
+            destination
+        }
+
     }
 
     static Path exists( final File outfile, final Path file, final Path workDir, final LinkOption option ){
@@ -193,10 +200,9 @@ class LocalFileWalker {
                     String[] data = line.split(';')
                     Path currentPath = data[ VIRTUAL_PATH ] as Path
                     log.trace "Compare $currentPath and $fakePath match: ${(currentPath == fakePath)}"
-                    if ( currentPath == fakePath ) {
-                        Path p = data[ REAL_PATH ] ? data[ REAL_PATH ] as Path : currentPath
-                        return createLocalPath.apply( p, new FileAttributes( data ), workDir )
-                    } else return null
+                    return ( currentPath == fakePath )
+                            ? createLocalPath.apply( currentPath, new FileAttributes( data ), workDir )
+                            : null
                 }
                 .filter{ it != null }
                 .findFirst()
