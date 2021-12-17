@@ -58,7 +58,8 @@ class LocalPath implements Path {
             Path src = link.src as Path
             Path dst = link.dst as Path
             if ( Files.exists( src, LinkOption.NOFOLLOW_LINKS ) ) {
-                Files.delete( src )
+                if ( src.isDirectory() ) src.deleteDir()
+                else Files.delete( src )
             } else {
                 src.parent.toFile().mkdirs()
             }
