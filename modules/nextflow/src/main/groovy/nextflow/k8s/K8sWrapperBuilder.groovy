@@ -75,6 +75,28 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
                 local ENDFILE="\$(readlink -f "\$STARTFILE")"
                 [ -f "\$ENDFILE" ] && local EXISTS=1 || local EXISTS=0
                 local INFO="\$(stat -c "%s;%F;%w;%x;%y" "\$ENDFILE")"
+                if [ "\$INFO" = "" ]
+                then
+                    local SIZE=\$(ls -l "\$ENDFILE" | awk '{print \$5}')
+                    local TMP=\$(ls -l "\$ENDFILE" | awk '{print \$1}')
+                    local TMP=\${TMP:0:1}
+                    local TYPE="unknown"
+                    if [ "\$TMP" = "-" ]
+                    then
+                        local TYPE="regular file"
+                    elif [ "\$TMP" = "d" ]
+                    then
+                        local TYPE="directory"
+                    elif [ "\$TMP" = "l" ]
+                    then
+                        local TYPE="symbolic link"
+                    fi
+                    local CREATIONTIME="-"
+                    # ATTENTION: smallest time unit of these timestamps is one second!
+                    local ACCESSTIME=\$(ls -leu "\$ENDFILE" | awk '{print \$7" "\$8" "\$9" "\$10}')
+                    local MODIFTIME=\$(ls -let "\$ENDFILE" | awk '{print \$7" "\$8" "\$9" "\$10}')
+                    local INFO="\$SIZE;\$TYPE;\$CREATIONTIME;\$ACCESSTIME;\$MODIFTIME"
+                fi
                 [ "\$STARTFILE" = "\$ENDFILE" ] && local ENDFILE=""
                 local OUTPUT="\$STARTFILE;\$EXISTS;\$ENDFILE;\$INFO"
                 echo "\$OUTPUT"
