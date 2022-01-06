@@ -193,8 +193,8 @@ class K8sExecutor extends Executor {
 
     }
 
-    void close(){
-
+    @Override
+    void shutdown() {
         final K8sConfig.K8sScheduler schedulerConfig = k8sConfig.getScheduler()
         if( schedulerConfig ) {
             try{

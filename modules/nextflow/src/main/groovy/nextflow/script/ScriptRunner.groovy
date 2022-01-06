@@ -16,9 +16,6 @@
 
 package nextflow.script
 
-import nextflow.executor.Executor
-import nextflow.k8s.K8sExecutor
-
 import static nextflow.util.ConfigHelper.*
 
 import java.nio.file.Path
@@ -242,12 +239,6 @@ class ScriptRunner {
         session.destroy()
         session.cleanup()
         Global.cleanUp()
-
-        //Delete daemonset and unregister scheduler
-        Executor executor = scriptParser.getScript().getTaskProcessor().getExecutor()
-        if ( executor instanceof K8sExecutor ){
-            ((K8sExecutor) executor).close()
-        }
 
         log.debug "> Execution complete -- Goodbye"
     }
