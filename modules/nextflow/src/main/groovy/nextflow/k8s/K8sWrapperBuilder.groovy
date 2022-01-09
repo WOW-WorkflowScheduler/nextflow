@@ -77,8 +77,8 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
                 local INFO="\$(stat -c "%s;%F;%w;%x;%y" "\$ENDFILE")"
                 if [ "\$INFO" = "" ]
                 then
-                    local SIZE=\$(ls -l "\$ENDFILE" | awk '{print \$5}')
-                    local TMP=\$(ls -l "\$ENDFILE" | awk '{print \$1}')
+                    local SIZE=\$(ls -ld "\$ENDFILE" | awk '{print \$5}')
+                    local TMP=\$(ls -ld "\$ENDFILE" | awk '{print \$1}')
                     local TMP=\${TMP:0:1}
                     local TYPE="unknown"
                     if [ "\$TMP" = "-" ]
@@ -93,8 +93,8 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
                     fi
                     local CREATIONTIME="-"
                     # ATTENTION: smallest time unit of these timestamps is one second!
-                    local ACCESSTIME=\$(ls -leu "\$ENDFILE" | awk '{print \$7" "\$8" "\$9" "\$10}')
-                    local MODIFTIME=\$(ls -let "\$ENDFILE" | awk '{print \$7" "\$8" "\$9" "\$10}')
+                    local ACCESSTIME=\$(ls -ldeu "\$ENDFILE" | awk '{print \$7" "\$8" "\$9" "\$10}')
+                    local MODIFTIME=\$(ls -ldet "\$ENDFILE" | awk '{print \$7" "\$8" "\$9" "\$10}')
                     local INFO="\$SIZE;\$TYPE;\$CREATIONTIME;\$ACCESSTIME;\$MODIFTIME"
                 fi
                 [ "\$STARTFILE" = "\$ENDFILE" ] && local ENDFILE=""
