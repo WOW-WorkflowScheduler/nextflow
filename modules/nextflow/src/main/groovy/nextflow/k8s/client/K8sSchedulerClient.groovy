@@ -138,7 +138,7 @@ class K8sSchedulerClient {
         while ( trials++ < 50 ) {
             try {
                 HttpURLConnection post = new URL(url).openConnection() as HttpURLConnection
-                post.setRequestMethod( "POST" )
+                post.setRequestMethod( "PUT" )
                 post.setDoOutput(true)
                 post.setRequestProperty("Content-Type", "application/json")
                 data.dns = getDNS()
@@ -172,7 +172,7 @@ class K8sSchedulerClient {
     Map registerTask( Map config ){
 
         HttpURLConnection post = new URL("${getDNS()}/scheduler/registerTask/$namespace/$runName").openConnection() as HttpURLConnection
-        post.setRequestMethod( "POST" )
+        post.setRequestMethod( "PUT" )
         String message = JsonOutput.toJson( config )
         post.setDoOutput(true)
         post.setRequestProperty("Content-Type", "application/json")
@@ -226,8 +226,9 @@ class K8sSchedulerClient {
 
     Map getFileLocation( String path ){
 
-        HttpURLConnection get = new URL("${getDNS()}/file/$namespace/$runName").openConnection() as HttpURLConnection
-        get.setRequestMethod( "POST" )
+        String pathEncoded = URLEncoder.encode(path,'utf-8')
+        HttpURLConnection get = new URL("${getDNS()}/file/$namespace/$runName?path=$pathEncoded").openConnection() as HttpURLConnection
+        get.setRequestMethod( "GET" )
         get.setDoOutput(true)
         get.setRequestProperty("Content-Type", "application/json")
         get.getOutputStream().write("$path".getBytes("UTF-8"));
