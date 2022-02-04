@@ -147,14 +147,14 @@ class K8sSchedulerClient {
         int trials = 0
         while ( trials++ < 50 ) {
             try {
-                HttpURLConnection post = new URL(url).openConnection() as HttpURLConnection
-                post.setRequestMethod( "PUT" )
-                post.setDoOutput(true)
-                post.setRequestProperty("Content-Type", "application/json")
+                HttpURLConnection put = new URL(url).openConnection() as HttpURLConnection
+                put.setRequestMethod( "PUT" )
+                put.setDoOutput(true)
+                put.setRequestProperty("Content-Type", "application/json")
                 data.dns = getDNS()
                 String message = JsonOutput.toJson( data )
-                post.getOutputStream().write(message.getBytes("UTF-8"))
-                int responseCode = post.getResponseCode()
+                put.getOutputStream().write(message.getBytes("UTF-8"))
+                int responseCode = put.getResponseCode()
                 if( responseCode != 200 ){
                     throw new IllegalStateException( "Got code: ${responseCode} from k8s scheduler while registering" )
                 }
@@ -182,18 +182,18 @@ class K8sSchedulerClient {
 
     Map registerTask( Map config ){
 
-        HttpURLConnection post = new URL("${getDNS()}/scheduler/registerTask/$namespace/$runName").openConnection() as HttpURLConnection
-        post.setRequestMethod( "PUT" )
+        HttpURLConnection put = new URL("${getDNS()}/scheduler/registerTask/$namespace/$runName").openConnection() as HttpURLConnection
+        put.setRequestMethod( "PUT" )
         String message = JsonOutput.toJson( config )
-        post.setDoOutput(true)
-        post.setRequestProperty("Content-Type", "application/json")
-        post.getOutputStream().write(message.getBytes("UTF-8"));
-        int responseCode = post.getResponseCode()
+        put.setDoOutput(true)
+        put.setRequestProperty("Content-Type", "application/json")
+        put.getOutputStream().write(message.getBytes("UTF-8"));
+        int responseCode = put.getResponseCode()
         if( responseCode != 200 ){
             throw new IllegalStateException( "Got code: ${responseCode} from nextflow scheduler, while registering task: ${config.name}" )
         }
         tasksInBatch++
-        Map response = new JsonSlurper().parse(post.getInputStream()) as Map
+        Map response = new JsonSlurper().parse(put.getInputStream()) as Map
         return response
 
     }
