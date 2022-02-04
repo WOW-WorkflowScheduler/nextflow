@@ -20,6 +20,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.Memoized
 import groovy.transform.PackageScope
 import groovy.util.logging.Slf4j
+import nextflow.dag.DAG
 import nextflow.executor.Executor
 import nextflow.fusion.FusionHelper
 import nextflow.k8s.client.K8sClient
@@ -255,4 +256,9 @@ class K8sExecutor extends Executor {
     boolean isFusionEnabled() {
         return FusionHelper.isFusionEnabled(session)
     }
+    
+    void informDagChange( List<DAG.Vertex> processedVertices ) {
+        schedulerClient?.informDagChange( processedVertices )
+    }
+
 }

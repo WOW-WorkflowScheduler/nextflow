@@ -26,7 +26,9 @@ import groovyx.gpars.dataflow.DataflowReadChannel
 import groovyx.gpars.dataflow.DataflowWriteChannel
 import groovyx.gpars.dataflow.expression.DataflowExpression
 import groovyx.gpars.dataflow.operator.DataflowProcessor
+import nextflow.Global
 import nextflow.NF
+import nextflow.Session
 import nextflow.extension.CH
 import nextflow.extension.DataflowHelper
 import nextflow.processor.TaskProcessor
@@ -86,6 +88,15 @@ class DAG {
     List<Vertex> getVertices() { vertices }
 
     List<Edge> getEdges() { edges }
+
+    private List<Vertex> processedVertices = new ArrayList<>(50)
+
+    private void informDagChange( Vertex vertex ){
+        processedVertices << vertex
+        (Global.session as Session).executorFactory.callExecutors({it.informDagChange(processedVertices)})
+    }
+
+    List<Vertex> getProcessedVertices(){ processedVertices }
 
     boolean isEmpty() { edges.size()==0 && vertices.size()==0 }
 
@@ -148,6 +159,9 @@ class DAG {
         for( ChannelHandler channel : outbounds ) {
             outbound( vertex, channel )
         }
+
+        informDagChange( vertex )
+
     }
 
     /**

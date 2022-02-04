@@ -17,6 +17,9 @@ package nextflow.k8s.client
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
+import nextflow.Global
+import nextflow.Session
+import nextflow.dag.DAG
 import nextflow.file.LocalFileWalker
 import nextflow.k8s.K8sConfig
 import nextflow.k8s.localdata.LocalPath
@@ -45,6 +48,11 @@ class K8sSchedulerClient {
     private final Collection<PodVolumeClaim> volumeClaims
     private String ip
     private int tasksInBatch = 0;
+
+    private DAG dag
+    Object submittedVertexHelper = new Object()
+    int submittedVertices = 0
+
 
 
     K8sSchedulerClient(K8sConfig.K8sScheduler schedulerConfig, String namespace, String runName, K8sClient k8sClient,
@@ -130,6 +138,8 @@ class K8sSchedulerClient {
     synchronized void registerScheduler( Map data ) {
         if ( registered ) return
 
+        dag = (Global.session as Session).getDag()
+
         startScheduler()
 
         String url = "${getDNS()}/scheduler/registerScheduler/$namespace/$runName/${schedulerConfig.getStrategy()}"
@@ -148,6 +158,7 @@ class K8sSchedulerClient {
                 if( responseCode != 200 ){
                     throw new IllegalStateException( "Got code: ${responseCode} from k8s scheduler while registering" )
                 }
+                loadDAG()
                 return
             } catch (UnknownHostException e) {
                 throw new IllegalArgumentException("The scheduler was not found under '$url', is the url correct and the scheduler running?")
@@ -278,4 +289,70 @@ class K8sSchedulerClient {
 
     }
 
+    ///* DAG */
+
+    private submitVertices( List vertices ){
+        HttpURLConnection put = new URL("${getDNS()}/scheduler/DAG/addVertices/$namespace/$runName").openConnection() as HttpURLConnection
+        put.setRequestMethod( "PUT" )
+        String message = JsonOutput.toJson( vertices )
+        put.setDoOutput(true)
+        put.setRequestProperty("Content-Type", "application/json")
+        put.getOutputStream().write(message.getBytes("UTF-8"));
+        int responseCode = put.getResponseCode()
+        if( responseCode != 200 ){
+            throw new IllegalStateException( "Got code: ${responseCode} from nextflow scheduler, while submitting vertices: ${vertices}" )
+        }
+    }
+
+    private submitEdges( List edges ){
+        HttpURLConnection put = new URL("${getDNS()}/scheduler/DAG/addEdges/$namespace/$runName").openConnection() as HttpURLConnection
+        put.setRequestMethod( "PUT" )
+        String message = JsonOutput.toJson( edges )
+        put.setDoOutput(true)
+        put.setRequestProperty("Content-Type", "application/json")
+        put.getOutputStream().write(message.getBytes("UTF-8"));
+        int responseCode = put.getResponseCode()
+        if( responseCode != 200 ){
+            throw new IllegalStateException( "Got code: ${responseCode} from nextflow scheduler, while submitting vertices: ${edges}" )
+        }
+    }
+
+    private loadDAG(){
+        informDagChange( (Global.session as Session).dag.getProcessedVertices() )
+    }
+
+    void informDagChange( List<DAG.Vertex> vertices ) {
+        Set verticesToSubmit = []
+        List edgesToSubmit
+        synchronized ( submittedVertexHelper ){
+            if ( vertices.size() <= submittedVertices ) return
+            for ( int i = submittedVertices; i < vertices.size(); i++ ) {
+                verticesToSubmit << vertices[ i ]
+            }
+            edgesToSubmit = dag.getEdges().findAll {
+                it.to && it.from && ( verticesToSubmit.contains( it.to ) || verticesToSubmit.contains( it.from ) )
+            }
+            submittedVertices += verticesToSubmit.size()
+        }
+        verticesToSubmit = verticesToSubmit.collect { extractVertex( it) }
+        edgesToSubmit = edgesToSubmit.collect { extractEdge( it ) }
+        submitVertices( verticesToSubmit as List )
+        submitEdges( edgesToSubmit )
+    }
+
+    private extractVertex( DAG.Vertex v ){
+        return [
+                label : v.label,
+                type : v.type.toString(),
+                uid : v.getOrder()
+        ]
+    }
+
+    private extractEdge( DAG.Edge e ){
+        return [
+                label : e.getLabel(),
+                from : e.getFrom().getOrder(),
+                to : e.getTo().getOrder()
+        ]
+    }
 }
