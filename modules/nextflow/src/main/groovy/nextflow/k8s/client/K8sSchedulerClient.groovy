@@ -230,8 +230,6 @@ class K8sSchedulerClient {
         HttpURLConnection get = new URL("${getDNS()}/file/$namespace/$runName?path=$pathEncoded").openConnection() as HttpURLConnection
         get.setRequestMethod( "GET" )
         get.setDoOutput(true)
-        get.setRequestProperty("Content-Type", "application/json")
-        get.getOutputStream().write("$path".getBytes("UTF-8"));
         int responseCode = get.getResponseCode()
         if( responseCode != 200 ){
             throw new IllegalStateException( "Got code: ${responseCode} from nextflow scheduler, while requesting file location: $path (${get.responseMessage})" )
