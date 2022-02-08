@@ -19,6 +19,8 @@ class LocalPath implements Path {
     private final K8sSchedulerClient client
     private boolean wasDownloaded = false
     private Path workDir
+    private boolean createdSymlinks = false
+    private final Object createSymlinkHelper = new Object();
 
     private LocalPath(Path path, K8sSchedulerClient client, LocalFileWalker.FileAttributes attributes, Path workDir ) {
         this.path = path
@@ -54,16 +56,29 @@ class LocalPath implements Path {
 
     private Map getLocation( String absolutePath ){
         Map response = client.getFileLocation( absolutePath )
-        for ( Map link : response.symlinks ) {
-            Path src = link.src as Path
-            Path dst = link.dst as Path
-            if ( Files.exists( src, LinkOption.NOFOLLOW_LINKS ) ) {
-                if ( src.isDirectory() ) src.deleteDir()
-                else Files.delete( src )
-            } else {
-                src.parent.toFile().mkdirs()
+        synchronized ( createSymlinkHelper ) {
+            if ( !createdSymlinks ) {
+                for (Map link : response.symlinks) {
+                    Path src = link.src as Path
+                    Path dst = link.dst as Path
+                    if (Files.exists(src, LinkOption.NOFOLLOW_LINKS)) {
+                        try {
+                            if (src.isDirectory()) src.deleteDir()
+                            else Files.delete(src)
+                        } catch ( Exception e ){
+                            log.warn( "Unable to delete " + src )
+                        }
+                    } else {
+                        src.parent.toFile().mkdirs()
+                    }
+                    try{
+                        Files.createSymbolicLink(src, dst)
+                    } catch ( Exception e ){
+                        log.warn( "Unable to create symlink: "  + src + " -> " + dst )
+                    }
+                }
+                createdSymlinks = true
             }
-            Files.createSymbolicLink( src, dst )
         }
         response
     }
