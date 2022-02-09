@@ -304,10 +304,10 @@ class LocalPath implements Path {
         Object result = path.invokeMethod(name, args)
         if( lastModified != file.lastModified() ){
             //Update location in scheduler (overwrite all others)
-            client.addFileLocation( downloadResult.location.path , file.size(), file.lastModified(), true )
+            client.addFileLocation( downloadResult.location.path , file.size(), file.lastModified(), downloadResult.location.locationWrapperID, true )
         } else if ( downloadResult.wasDownloaded ){
             //Add location to scheduler
-            client.addFileLocation( downloadResult.location.path , file.size(), file.lastModified(), false )
+            client.addFileLocation( downloadResult.location.path , file.size(), file.lastModified(), downloadResult.location.locationWrapperID, false )
         }
         return result
     }

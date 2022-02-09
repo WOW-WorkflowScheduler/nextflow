@@ -264,7 +264,7 @@ class K8sSchedulerClient {
 
     }
 
-    void addFileLocation( String path, long size, long timestamp, boolean overwrite, String node = null ){
+    void addFileLocation( String path, long size, long timestamp, long locationWrapperID, boolean overwrite, String node = null ){
 
         String method = overwrite ? 'overwrite' : 'add'
 
@@ -274,7 +274,8 @@ class K8sSchedulerClient {
         Map data = [
             path      : path,
             size      : size,
-            timestamp : timestamp
+            timestamp : timestamp,
+            locationWrapperID : locationWrapperID
         ]
         if ( node ){
             data.node = node
