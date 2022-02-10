@@ -15,12 +15,12 @@ import java.nio.file.attribute.BasicFileAttributes
 class LocalPath implements Path {
 
     private final Path path
-    private final LocalFileWalker.FileAttributes attributes;
-    private final K8sSchedulerClient client
+    private transient final LocalFileWalker.FileAttributes attributes;
+    private transient final K8sSchedulerClient client
     private boolean wasDownloaded = false
     private Path workDir
     private boolean createdSymlinks = false
-    private final Object createSymlinkHelper = new Object();
+    private transient final Object createSymlinkHelper = new Object();
 
     private LocalPath(Path path, K8sSchedulerClient client, LocalFileWalker.FileAttributes attributes, Path workDir ) {
         this.path = path
@@ -28,6 +28,8 @@ class LocalPath implements Path {
         this.attributes = attributes
         this.workDir = workDir
     }
+
+    private LocalPath(){}
 
     LocalPath toLocalPath( Path path, LocalFileWalker.FileAttributes attributes = null ){
         toLocalPath( path, client, attributes, workDir )
