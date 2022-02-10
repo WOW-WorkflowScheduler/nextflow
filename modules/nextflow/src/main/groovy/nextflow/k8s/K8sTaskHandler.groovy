@@ -336,6 +336,8 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
     ){
         if( input instanceof Collection ){
             input.forEach { extractValue(booleanInputs, numberInputs, stringInputs, fileInputs, key, it) }
+        } else if( input instanceof Map ){
+            input.entrySet().forEach { extractValue(booleanInputs, numberInputs, stringInputs, fileInputs, key + it.key, it.value) }
         } else if( input instanceof FileHolder ){
             fileInputs.add([ name : key, value : [ storePath : input.storePath.toString(), sourceObj : input.sourceObj.toString(), stageName : input.stageName.toString() ]])
         } else if ( input instanceof Boolean ) {
@@ -348,7 +350,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
             stringInputs.add( [ name : key, value : ((GStringImpl) input).toString()] )
         } else {
             log.error ( "input was of class ${input.class}: $input")
-            throw new IllegalArgumentException( "input was of class ${input.class}: $input" )
+            throw new IllegalArgumentException( "Task input was of class and cannot be parsed: ${input.class}: $input" )
         }
 
     }
