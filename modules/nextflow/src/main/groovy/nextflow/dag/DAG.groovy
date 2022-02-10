@@ -209,6 +209,7 @@ class DAG {
                 int p = vertices.indexOf(edge.to)
                 if(p!=-1) vertices.add(p,edge.from)
                 else vertices.add(edge.from)
+                informDagChange( edge.from )
             }
             def fork = new Edge(channel: entering.channel, from: edge.from, to: vertex, label: entering.label)
             edges << fork
@@ -315,12 +316,14 @@ class DAG {
                 def vertex = e.from = new Vertex(Type.ORIGIN)
                 int p = vertices.indexOf( e.to )
                 vertices.add( p, vertex )
+                informDagChange( vertex )
             }
             else if( !e.to ) {
                 // creates the missing termination vertex
                 def vertex = e.to = new Vertex(Type.NODE)
                 int p = vertices.indexOf( e.from )
                 vertices.add( p+1, vertex )
+                informDagChange( vertex )
             }
         }
     }

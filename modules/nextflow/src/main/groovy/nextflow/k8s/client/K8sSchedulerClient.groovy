@@ -345,15 +345,15 @@ class K8sSchedulerClient {
         return [
                 label : v.label,
                 type : v.type.toString(),
-                uid : v.getOrder()
+                uid : v.getId()
         ]
     }
 
     private extractEdge( DAG.Edge e ){
         return [
                 label : e.getLabel(),
-                from : e.getFrom().getOrder(),
-                to : e.getTo().getOrder()
+                from : e.getFrom().getId(),
+                to : e.getTo().getId()
         ]
     }
 }
