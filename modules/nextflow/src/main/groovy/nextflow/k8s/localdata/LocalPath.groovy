@@ -89,7 +89,6 @@ class LocalPath implements Path {
      */
     Path fakePath(){
         Path fake = FileHelper.fakePath( path, workDir )
-        log.info( "Fake path: $path to $fake")
         return fake
     }
 

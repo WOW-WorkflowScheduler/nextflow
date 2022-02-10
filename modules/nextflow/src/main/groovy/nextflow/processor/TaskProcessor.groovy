@@ -1694,7 +1694,7 @@ class TaskProcessor {
         for( int i=0; i<collectedFiles.size(); i++ ) {
             final it = collectedFiles.get(i)
             //Error, if it is not of the same type as workDir
-            final relName = workDir.relativize(it instanceof LocalPath ? it.toString() as Path : it).toString()
+            final relName = workDir.relativize(it instanceof LocalPath ? it.fakePath() : it).toString()
             if( !allStaged.contains(relName) )
                 result.add(it)
         }
