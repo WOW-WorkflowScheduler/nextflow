@@ -86,19 +86,23 @@ class LocalFileWalker {
         if( !date || date == "-" ) {
             return null
         }
-        long millis
-        if( Character.isLetter(date[0] as char) ) {
-            // if ls was used, date has the format "Nov 2 08:49:30 2021"
-            millis = new SimpleDateFormat("MMM dd HH:mm:ss yyyy").parse(date).getTime()
-        } else {
-            // if stat was used, date has the format "2021-11-02 08:49:30.955691861 +0000"
-            String[] parts = date.split(" ")
-            parts[1] = parts[1].substring(0, 12)
-            // parts[1] now has milliseconds as smallest units e.g. "08:49:30.955"
-            String shortenedDate = String.join(" ", parts)
-            millis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").parse(shortenedDate).getTime()
+        try {
+            long millis
+            if (Character.isLetter(date[0] as char)) {
+                // if ls was used, date has the format "Nov 2 08:49:30 2021"
+                millis = new SimpleDateFormat("MMM dd HH:mm:ss yyyy").parse(date).getTime()
+            } else {
+                // if stat was used, date has the format "2021-11-02 08:49:30.955691861 +0000"
+                String[] parts = date.split(" ")
+                parts[1] = parts[1].substring(0, 12)
+                // parts[1] now has milliseconds as smallest units e.g. "08:49:30.955"
+                String shortenedDate = String.join(" ", parts)
+                millis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").parse(shortenedDate).getTime()
+            }
+            return FileTime.fromMillis(millis)
+        } catch ( Exception e ) {
+            return null
         }
-        return FileTime.fromMillis(millis)
     }
 
     static class FileAttributes implements BasicFileAttributes {
@@ -128,9 +132,9 @@ class LocalFileWalker {
             this.link = data[ REAL_PATH ].isEmpty()
             this.size = data[ SIZE ] as Long
             this.fileType = data[ FILE_TYPE ]
-            this.creationDate = fileTimeFromString(data[ CREATION_DATE ])
             this.accessDate = fileTimeFromString(data[ ACCESS_DATE ])
             this.modificationDate = fileTimeFromString(data[ MODIFICATION_DATE ])
+            this.creationDate = fileTimeFromString(data[ CREATION_DATE ]) ?: this.modificationDate
             this.directory = fileType == 'directory'
             if ( !directory && !fileType.contains( 'file' ) ){
                 log.error( "Unknown type: $fileType" )
