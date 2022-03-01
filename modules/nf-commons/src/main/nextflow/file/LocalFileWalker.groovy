@@ -11,7 +11,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.attribute.FileTime
-import java.text.SimpleDateFormat
 
 @Slf4j
 class LocalFileWalker {
@@ -25,9 +24,9 @@ class LocalFileWalker {
     static final int ACCESS_DATE = 6
     static final int MODIFICATION_DATE = 7
 
-    public static TriFunction createLocalPath;
+    public static TriFunction createLocalPath
 
-    public static Path walkFileTree(Path start,
+    static Path walkFileTree(Path start,
                                     Set<FileVisitOption> options,
                                     int maxDepth,
                                     FileVisitor<? super Path> visitor,
@@ -39,7 +38,7 @@ class LocalFileWalker {
         boolean skip = false
 
         File file = new File( start.toString() + File.separatorChar + ".command.outfiles" )
-        String line;
+        String line
         file.withReader { reader ->
             while ((line = reader.readLine()) != null) {
                 String[] data = line.split(';')
