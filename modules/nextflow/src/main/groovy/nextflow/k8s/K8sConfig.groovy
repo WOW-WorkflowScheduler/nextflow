@@ -28,6 +28,7 @@ import nextflow.k8s.client.ClientConfig
 import nextflow.k8s.client.K8sClient
 import nextflow.k8s.client.K8sResponseException
 import nextflow.k8s.model.PodHostMount
+import nextflow.k8s.model.PodNodeSelector
 import nextflow.k8s.model.PodOptions
 import nextflow.k8s.model.PodSecurityContext
 import nextflow.k8s.model.PodVolumeClaim
@@ -400,6 +401,10 @@ class K8sConfig implements Map<String,Object> {
                 workdir = workdir.resolve( 'localWork' )
             }
             return workdir.toString()
+        }
+
+        PodNodeSelector getNodeSelector(){
+            return target.nodeSelector ? new PodNodeSelector( target.nodeSelector ) : null
         }
 
         boolean deleteIntermediateData(){

@@ -154,6 +154,20 @@ class K8sExecutor extends Executor {
         }
 
         String name = "mount-${session.runName.replace('_', '-')}"
+        def spec = [
+                containers: [ [
+                                      name: name,
+                                      image: k8sConfig.getStorage().getImageName(),
+                                      volumeMounts: mounts,
+                                      imagePullPolicy : 'IfNotPresent'
+                              ] ],
+                volumes: volumes,
+                serviceAccount: client.config.serviceAccount
+        ]
+
+        if( k8sConfig.getStorage().getNodeSelector() )
+            spec.put( 'nodeSelector', k8sConfig.getStorage().getNodeSelector().toSpec() as Serializable )
+
         def pod = [
                 apiVersion: 'apps/v1',
                 kind: 'DaemonSet',
@@ -169,16 +183,7 @@ class K8sExecutor extends Executor {
                                                 name : name
                                         ]
                                 ],
-                                spec: [
-                                        containers: [ [
-                                                              name: name,
-                                                              image: k8sConfig.getStorage().getImageName(),
-                                                              volumeMounts: mounts,
-                                                              imagePullPolicy : 'IfNotPresent'
-                                                      ] ],
-                                        volumes: volumes,
-                                        serviceAccount: client.config.serviceAccount
-                                ],
+                                spec: spec,
                         ],
                         selector: [
                                 matchLabels: [
