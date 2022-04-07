@@ -326,6 +326,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         k8sConfig.getAnnotations()
     }
 
+    @CompileDynamic
     private void extractValue(
             List<Object> booleanInputs,
             List<Object> numberInputs,
@@ -510,7 +511,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
 
     boolean schedulerPostProcessingHasFinished(){
         Map state = schedulerClient.getTaskState(podName)
-        return (!state.state) ?: ["FINISHED", "FINISHED_WITH_ERROR", "DELETED"].contains( state.state.toString() )
+        return (!state.state) ?: ["FINISHED", "FINISHED_WITH_ERROR", "INIT_WITH_ERRORS", "DELETED"].contains( state.state.toString() )
     }
 
     @Override
