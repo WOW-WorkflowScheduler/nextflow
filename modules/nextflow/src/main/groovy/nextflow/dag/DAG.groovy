@@ -93,7 +93,7 @@ class DAG {
 
     private void informDagChange( Vertex vertex ){
         processedVertices << vertex
-        (Global.session as Session).executorFactory.callExecutors({it.informDagChange(processedVertices)})
+        (Global.session as Session)?.executorFactory?.callExecutors({it.informDagChange(processedVertices)})
     }
 
     List<Vertex> getProcessedVertices(){ processedVertices }
