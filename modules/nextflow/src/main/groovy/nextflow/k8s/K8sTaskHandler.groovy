@@ -130,7 +130,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         return podName
     }
 
-    protected K8sConfig getK8sConfig() { executor.getK8sConfig() }
+    protected K8sConfig getK8sConfig() { executor?.getK8sConfig() }
 
     protected boolean useJobResource() { resourceType==ResourceType.Job }
 
@@ -236,11 +236,11 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         if ( executor.getK8sConfig().getScheduler() )
             builder.withScheduler( "${executor.getK8sConfig().getScheduler().getName()}-${getRunName()}" )
 
-        final def schedulerConf = executor.getK8sConfig().getScheduler()
+        final def schedulerConf = executor?.getK8sConfig()?.getScheduler()
         if ( schedulerConf )
             builder.withScheduler( "${schedulerConf.getName()}-${getRunName()}" )
 
-        final def storage = executor.getK8sConfig().getStorage()
+        final def storage = executor?.getK8sConfig()?.getStorage()
         if ( storage ){
             task.initialized = false
             task.withInit = true
@@ -456,7 +456,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
     boolean checkIfRunning() {
         if( !podName ) throw new IllegalStateException("Missing K8s ${resourceType.lower()} name -- cannot check if running")
         if(isSubmitted()) {
-            if ( !task.initialized ){
+            if ( !task?.initialized ){
                 def state = getState( true )
                 if (state && (state.terminated)) {
                     int exitCode = (state.terminated as Map).exitCode as Integer
@@ -525,7 +525,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
             status = TaskStatus.COMPLETED
             return true
         }
-        if( state && state.terminated && ( !k8sConfig.locationAwareScheduling() || schedulerPostProcessingHasFinished() ) ) {
+        if( state && state.terminated && ( !k8sConfig?.locationAwareScheduling() || schedulerPostProcessingHasFinished() ) ) {
             if( state.nodeTermination instanceof NodeTerminationException ||
                 state.nodeTermination instanceof PodUnschedulableException ) {
                 // keep track of the node termination error
