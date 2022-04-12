@@ -94,13 +94,12 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
 
     private K8sExecutor executor
 
-
     private String runsOnNode = null
 
     private boolean initContainer = false
 
     private boolean initFinished = true
-
+    
     private Integer initError = null
 
     K8sTaskHandler( TaskRun task, K8sExecutor executor ) {
@@ -243,8 +242,8 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
 
         final def storage = executor.getK8sConfig().getStorage()
         if ( storage ){
-            initContainer = true
-            initFinished = false
+            task.initialized = false
+            task.withInit = true
             builder.withInitImageName( storage.getImageName() )
             builder.withInitCommand( ['bash',"-c", "${storage.getCmd().strip()} &> ${TaskRun.CMD_INIT_LOG}".toString()] )
         }
@@ -457,13 +456,14 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
     boolean checkIfRunning() {
         if( !podName ) throw new IllegalStateException("Missing K8s ${resourceType.lower()} name -- cannot check if running")
         if(isSubmitted()) {
-            if ( !initFinished ){
+            if ( !task.initialized ){
                 def state = getState( true )
                 if (state && (state.terminated)) {
-                    initFinished = true
                     int exitCode = (state.terminated as Map).exitCode as Integer
                     if ( exitCode != 0 ){
                         initError = exitCode
+                    } else {
+                        task.initialized = true
                     }
                     this.state = null
                 }

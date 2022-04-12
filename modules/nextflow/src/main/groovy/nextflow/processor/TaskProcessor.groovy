@@ -764,7 +764,7 @@ class TaskProcessor {
     @CompileStatic
     final protected void checkCachedOrLaunchTask( TaskRun task, HashCode hash, boolean shouldTryCache ) {
 
-        int tries = task.failCount +1
+        int tries = task.failCount + task.initFailCount + 1
         while( true ) {
             hash = CacheHelper.defaultHasher().newHasher().putBytes(hash.asBytes()).putInt(tries).hash()
 
@@ -1000,7 +1000,8 @@ class TaskProcessor {
                     log.info "[$task.hashLog] NOTE: ${error.message} -- Execution is retried"
                 else
                     log.info "[$task.hashLog] NOTE: ${error.message} -- Cause: ${error.cause.message} -- Execution is retried"
-                task.failCount+=1
+                if ( task.initialized ) task.failCount+=1
+                else task.initFailCount+=1
                 final taskCopy = task.makeCopy()
                 session.getExecService().submit {
                     try {
@@ -1017,8 +1018,21 @@ class TaskProcessor {
                 return RETRY
             }
 
-            final int taskErrCount = task ? ++task.failCount : 0
-            final int procErrCount = ++errorCount
+            final int taskErrCount
+            final int procErrCount
+            final int initErrCount
+            if ( task?.withInit && !task?.initialized ) {
+                taskErrCount = task.failCount
+                initErrCount = ++task.initFailCount
+                procErrCount = errorCount
+            } else {
+                taskErrCount = task ? ++task.failCount : 0
+                initErrCount = task ? task.initFailCount : 0
+                procErrCount = ++errorCount
+            }
+            String logMessage = "${task.name}: errorCount: $procErrCount, retryCount: $taskErrCount"
+            if ( task.withInit ) logMessage += ", initCount: $initErrCount"
+            log.info( logMessage )
 
             // -- when is a task level error and the user has chosen to ignore error,
             //    just report and error message and DO NOT stop the execution
@@ -1027,12 +1041,16 @@ class TaskProcessor {
                 task.config.exitStatus = task.exitStatus
                 task.config.errorCount = procErrCount
                 task.config.retryCount = taskErrCount
+                task.config.initCount = initErrCount
 
-                errorStrategy = checkErrorStrategy(task, error, taskErrCount, procErrCount)
+                errorStrategy = checkErrorStrategy(task, error, taskErrCount, procErrCount, initErrCount)
                 if( errorStrategy.soft ) {
                     def msg = "[$task.hashLog] NOTE: $error.message"
                     if( errorStrategy == IGNORE ) msg += " -- Error is ignored"
-                    else if( errorStrategy == RETRY ) msg += " -- Execution is retried ($taskErrCount)"
+                    else if( errorStrategy == RETRY ) {
+                        if( !task.initialized ) msg += " -- InitError is ignored"
+                        msg += " -- Execution is retried (${task.config.getAttempt()})"
+                    }
                     log.info msg
                     task.failed = true
                     task.errorAction = errorStrategy
@@ -1087,9 +1105,9 @@ class TaskProcessor {
                 : name
     }
 
-    protected ErrorStrategy checkErrorStrategy( TaskRun task, ProcessException error, final int taskErrCount, final int procErrCount ) {
+    protected ErrorStrategy checkErrorStrategy( TaskRun task, ProcessException error, final int taskErrCount, final int procErrCount, final int initErrCount = 0 ) {
 
-        final action = task.config.getErrorStrategy()
+        final action = !task.initialized ? RETRY : task.config.getErrorStrategy()
 
         // retry is not allowed when the script cannot be compiled or similar errors
         if( error instanceof ProcessUnrecoverableException ) {
@@ -1105,12 +1123,15 @@ class TaskProcessor {
         if( action == RETRY ) {
             final int maxErrors = task.config.getMaxErrors()
             final int maxRetries = task.config.getMaxRetries()
+            final int maxInitRetries = task.config.getMaxInitRetries()
 
-            if( (procErrCount < maxErrors || maxErrors == -1) && taskErrCount <= maxRetries ) {
+            if( ( !task.initialized && initErrCount <= maxInitRetries)
+                    ||
+                ( task.initialized && (procErrCount < maxErrors || maxErrors == -1) && taskErrCount <= maxRetries )) {
                 final taskCopy = task.makeCopy()
                 session.getExecService().submit({
                     try {
-                        taskCopy.config.attempt = taskErrCount+1
+                        taskCopy.config.attempt = taskCopy.config.attempt ? taskCopy.config.attempt + 1 : 2
                         taskCopy.runType = RunType.RETRY
                         taskCopy.resolve(taskBody)
                         checkCachedOrLaunchTask( taskCopy, taskCopy.hash, false )
