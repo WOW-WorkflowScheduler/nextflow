@@ -63,7 +63,8 @@ class K8sSchedulerClient {
         this.schedulerConfig = schedulerConfig
         this.namespace = namespace ?: 'default'
         this.runName = runName
-        LocalFileWalker.createLocalPath = (Path path, LocalFileWalker.FileAttributes attr, Path workDir) -> LocalPath.toLocalPath( path, this, attr, workDir )
+        LocalPath.setClient( this )
+        LocalFileWalker.createLocalPath = (Path path, LocalFileWalker.FileAttributes attr, Path workDir) -> LocalPath.toLocalPath( path, attr, workDir )
     }
 
     private String getDNS(){

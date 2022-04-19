@@ -16,32 +16,35 @@ class LocalPath implements Path {
 
     private final Path path
     private transient final LocalFileWalker.FileAttributes attributes
-    private transient final K8sSchedulerClient client
+    private static transient K8sSchedulerClient client = null
     private boolean wasDownloaded = false
     private Path workDir
     private boolean createdSymlinks = false
     private transient final Object createSymlinkHelper = new Object()
 
-    private LocalPath(Path path, K8sSchedulerClient client, LocalFileWalker.FileAttributes attributes, Path workDir ) {
+    private LocalPath(Path path, LocalFileWalker.FileAttributes attributes, Path workDir ) {
         this.path = path
-        this.client = client
         this.attributes = attributes
         this.workDir = workDir
     }
 
     private LocalPath(){
         path = null
-        this.client = null
         this.attributes = null
         this.workDir = null
     }
 
     LocalPath toLocalPath( Path path, LocalFileWalker.FileAttributes attributes = null ){
-        toLocalPath( path, client, attributes, workDir )
+        toLocalPath( path, attributes, workDir )
     }
 
-    static LocalPath toLocalPath( Path path, K8sSchedulerClient client, LocalFileWalker.FileAttributes attributes, Path workDir ){
-        ( path instanceof  LocalPath ) ? path as LocalPath : new LocalPath( path, client, attributes, workDir )
+    static LocalPath toLocalPath( Path path, LocalFileWalker.FileAttributes attributes, Path workDir ){
+        ( path instanceof  LocalPath ) ? path as LocalPath : new LocalPath( path, attributes, workDir )
+    }
+
+    static void setClient( K8sSchedulerClient client ){
+        if ( !this.client ) this.client = client
+        else throw new IllegalStateException("Client was already set.")
     }
 
     private FtpClient getConnection( final String node, String daemon ){
