@@ -424,6 +424,7 @@ else
       launcher+=(--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED)
       launcher+=(--add-opens=java.base/jdk.internal.vm=ALL-UNNAMED)
       launcher+=(--add-opens=java.base/java.util.regex=ALL-UNNAMED)
+      launcher+=(--add-opens=java.base/sun.net.ftp=ALL-UNNAMED)
       [[ "$NXF_JVM_ARGS" ]] && launcher+=($NXF_JVM_ARGS)
       if [[ "$NXF_ENABLE_VIRTUAL_THREADS" == 'true' ]]; then
         [[ "$JAVA_VER" =~ ^(19|20) ]] && launcher+=(--enable-preview) || die "Virtual threads requires Java 19 or later - current version $JAVA_VER"
