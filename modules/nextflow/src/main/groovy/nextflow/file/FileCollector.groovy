@@ -15,6 +15,9 @@
  */
 
 package nextflow.file
+
+import nextflow.k8s.localdata.LocalPath
+
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.NoSuchFileException
@@ -141,6 +144,9 @@ abstract class FileCollector implements Closeable {
      * @return An {@link InputStream} referring the value
      */
     protected InputStream normalizeToStream0( value ) {
+        if( value instanceof LocalPath )
+            return value.newInputStream()
+
         if( value instanceof Path )
             return value.newInputStream()
 
