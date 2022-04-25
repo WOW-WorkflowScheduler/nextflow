@@ -78,7 +78,7 @@ class PodOptions {
         mountClaims = new HashSet<>(size)
         automountServiceAccountToken = true
         tolerations = new ArrayList<Map>(size)
-        hostMount = new HashSet<>(size
+        hostMount = new HashSet<>(size)
         init(options)
     }
 
