@@ -74,9 +74,10 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
                 local STARTFILE="\$1"
                 local ENDFILE="\$(readlink -f "\$STARTFILE")"
                 [ -f "\$ENDFILE" ] && local EXISTS=1 || local EXISTS=0
-                local INFO="\$(stat -c "%s;%F;%w;%x;%y" "\$ENDFILE")"
-                if [ "\$INFO" = "" ]
+                if command -v stat &> /dev/null
                 then
+                    local INFO="\$(stat -c "%s;%F;%w;%x;%y" "\$ENDFILE")"
+                else
                     local SIZE=\$(ls -ld "\$ENDFILE" | awk '{print \$5}')
                     local TMP=\$(ls -ld "\$ENDFILE" | awk '{print \$1}')
                     local TMP=\${TMP:0:1}
