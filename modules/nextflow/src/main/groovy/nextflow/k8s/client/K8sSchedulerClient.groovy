@@ -20,6 +20,7 @@ import groovy.util.logging.Slf4j
 import nextflow.Global
 import nextflow.Session
 import nextflow.dag.DAG
+import nextflow.exception.NodeTerminationException
 import nextflow.file.LocalFileWalker
 import nextflow.k8s.K8sConfig
 import nextflow.k8s.localdata.LocalPath
@@ -89,6 +90,10 @@ class K8sSchedulerClient {
         } catch ( K8sResponseException e ) {
             if ( e.getErrorCode() == 404 ) start = true
             else log.error( "Got unexpected HTTP code ${e.getErrorCode()} while checking scheduler's state", e.message )
+        } catch ( NodeTerminationException e ){
+            //NodeTerminationException is thrown if pod is not found
+            start = true
+            log.info "Scheduler ${schedulerConfig.getName()} can not be found"
         }
 
         if( start ){
@@ -104,7 +109,9 @@ class K8sSchedulerClient {
                     .withLabel('tier', 'control-plane')
                     .withHostMounts( hostMounts )
                     .withVolumeClaims( volumeClaims )
-                    .withWorkDir( schedulerConfig.getWorkDir() )
+
+            if ( schedulerConfig.getWorkDir() )
+                    builder.withWorkDir( schedulerConfig.getWorkDir() )
 
             if( schedulerConfig.getCommand() )
                 builder.withCommand( schedulerConfig.getCommand() )
