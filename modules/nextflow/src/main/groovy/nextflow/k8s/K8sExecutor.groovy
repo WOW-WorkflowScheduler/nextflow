@@ -106,10 +106,11 @@ class K8sExecutor extends Executor {
             this.schedulerBatch.setSchedulerClient( schedulerClient )
             final PodOptions podOptions = k8sConfig.getPodOptions()
             Map data = [
-                    workDir : k8sConfig.getStorage().getWorkdir(),
+                    workDir : k8sConfig.getStorage()?.getWorkdir(),
                     localClaims : podOptions.hostMount,
                     volumeClaims : podOptions.volumeClaims,
-                    copyStrategy : k8sConfig.getStorage().getCopyStrategy()
+                    copyStrategy : k8sConfig.getStorage()?.getCopyStrategy(),
+                    locationAware : k8sConfig.locationAwareScheduling()
             ]
 
             schedulerClient.registerScheduler( data )
