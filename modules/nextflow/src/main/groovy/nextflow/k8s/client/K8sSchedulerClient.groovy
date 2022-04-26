@@ -215,11 +215,11 @@ class K8sSchedulerClient {
 
     void startBatch(){
         tasksInBatch = 0
-        batch('start')
+        if ( !closed ) batch('start')
     }
 
     void endBatch(){
-        batch('end')
+        if ( !closed ) batch('end')
     }
 
     Map getTaskState( String podname ){
