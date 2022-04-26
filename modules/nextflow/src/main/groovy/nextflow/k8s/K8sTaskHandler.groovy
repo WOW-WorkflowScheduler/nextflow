@@ -16,7 +16,6 @@
 
 package nextflow.k8s
 
-import nextflow.script.params.InParam
 import org.codehaus.groovy.runtime.GStringImpl
 
 import java.nio.file.Files
