@@ -357,11 +357,6 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
 
     private Map registerTask(){
 
-        String name = task.name;
-        if( name.endsWith(")") ){
-            name = name.substring(0 , name.lastIndexOf( ' ' ) )
-        }
-
         final List<Object> booleanInputs = new LinkedList<>()
         final List<Object> numberInputs = new LinkedList<>()
         final List<Object> stringInputs = new LinkedList<>()
@@ -381,7 +376,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
                 ],
                 schedulerParams : [:],
                 name : task.name,
-                task : name,
+                task : task.processor.name,
                 stageInMode : task.getConfig().stageInMode,
                 cpus : task.config.getCpus(),
                 memoryInBytes : task.config.getMemory()?.toBytes()
