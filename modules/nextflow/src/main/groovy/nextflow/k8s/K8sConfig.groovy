@@ -368,7 +368,7 @@ class K8sConfig implements Map<String,Object> {
 
         Integer getCPUs() { target.cpu as Integer ?: 1 }
 
-        String getContainer() { target.container as String }
+        String getContainer() { target.container as String ?: 'fondahub/workflow-k8s-scheduler:latest' }
 
         String getCommand() { target.command as String }
 
