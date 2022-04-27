@@ -141,7 +141,7 @@ class K8sSchedulerClient {
             state = k8sClient.podState( schedulerConfig.getName() )
             //log state every 2 seconds
             if( i++ % 20 ) log.trace "Waiting for scheduler to start, current state: ${state.toString()}"
-        } while ( state.waiting );
+        } while ( state.waiting || state.isEmpty() );
 
         ip = k8sClient.podIP( schedulerConfig.getName() )
         if( !state.running ) throw new IllegalStateException( "Scheduler pod ${schedulerConfig.getName()} was not started, state: ${state.toString()}" )
