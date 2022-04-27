@@ -25,6 +25,7 @@ import nextflow.file.LocalFileWalker
 import nextflow.k8s.K8sConfig
 import nextflow.k8s.localdata.LocalPath
 import nextflow.k8s.model.PodHostMount
+import nextflow.k8s.model.PodSecurityContext
 import nextflow.k8s.model.PodSpecBuilder
 import nextflow.k8s.model.PodVolumeClaim
 
@@ -115,6 +116,10 @@ class K8sSchedulerClient {
 
             if( schedulerConfig.getCommand() )
                 builder.withCommand( schedulerConfig.getCommand() )
+
+            if( schedulerConfig.runAsUser() != null ){
+                builder.securityContext = new PodSecurityContext( schedulerConfig.runAsUser() )
+            }
 
             Map pod = builder.build()
 

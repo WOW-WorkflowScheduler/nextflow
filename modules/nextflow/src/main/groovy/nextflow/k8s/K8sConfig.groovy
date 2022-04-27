@@ -376,6 +376,8 @@ class K8sConfig implements Map<String,Object> {
 
         String getWorkDir() { target.workDir as String }
 
+        Integer runAsUser() { target.runAsUser as Integer }
+
     }
 
     @CompileStatic
