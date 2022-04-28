@@ -378,7 +378,7 @@ class K8sConfig implements Map<String,Object> {
 
         Integer runAsUser() { target.runAsUser as Integer }
 
-        Boolean autoClose() { target.autoClose as Boolean }
+        Boolean autoClose() { target.autoClose == null ? true : target.autoClose as Boolean }
 
     }
 
