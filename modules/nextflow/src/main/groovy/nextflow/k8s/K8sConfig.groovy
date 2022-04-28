@@ -378,6 +378,8 @@ class K8sConfig implements Map<String,Object> {
 
         Integer runAsUser() { target.runAsUser as Integer }
 
+        Boolean autoClose() { target.autoClose as Boolean }
+
     }
 
     @CompileStatic

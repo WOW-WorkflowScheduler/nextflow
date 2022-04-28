@@ -126,6 +126,9 @@ class K8sSchedulerClient {
             List env = [[
                     name: 'SCHEDULER_NAME',
                     value: schedulerConfig.getName()
+            ],[
+                    name: 'AUTOCLOSE',
+                    value: schedulerConfig.autoClose() as String
             ]]
 
             Map container = pod.spec.containers.get(0) as Map
