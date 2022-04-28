@@ -105,12 +105,14 @@ class K8sExecutor extends Executor {
                     k8sConfig.getPodOptions().getHostMount(), k8sConfig.getPodOptions().getVolumeClaims())
             this.schedulerBatch.setSchedulerClient( schedulerClient )
             final PodOptions podOptions = k8sConfig.getPodOptions()
+            Boolean traceEnabled = session.config.navigate('trace.enabled') as Boolean
             Map data = [
                     workDir : k8sConfig.getStorage()?.getWorkdir(),
                     localClaims : podOptions.hostMount,
                     volumeClaims : podOptions.volumeClaims,
                     copyStrategy : k8sConfig.getStorage()?.getCopyStrategy(),
-                    locationAware : k8sConfig.locationAwareScheduling()
+                    locationAware : k8sConfig.locationAwareScheduling(),
+                    traceEnabled : traceEnabled
             ]
 
             schedulerClient.registerScheduler( data )
