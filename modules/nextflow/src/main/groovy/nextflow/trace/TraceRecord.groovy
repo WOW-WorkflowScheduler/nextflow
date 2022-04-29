@@ -102,6 +102,18 @@ class TraceRecord implements Serializable {
             inv_ctxt: 'num',
             hostname: 'str',
             cpu_model:  'str'
+            scheduler_files_bytes: 'num',
+            scheduler_files_node_bytes: 'num',
+            scheduler_files_node_other_task_bytes: 'num',
+            scheduler_files: 'num',
+            scheduler_files_node: 'num',
+            scheduler_files_node_other_task: 'num',
+            scheduler_depending_task: 'num',
+            scheduler_time_in_queue: 'num',
+            scheduler_place_in_queue: 'num',
+            scheduler_location_count: 'num',
+            scheduler_tried_to_schedule: 'num',
+            scheduler_init_runtime: 'num'
     ]
 
     static public Map<String,Closure<String>> FORMATTER = [
@@ -459,6 +471,29 @@ class TraceRecord implements Serializable {
                     break
             }
 
+        }
+
+        return this
+    }
+
+    TraceRecord parseSchedulerTraceFile( Path file ) {
+
+        final text = file.text
+
+        final lines = text.readLines()
+        if( !lines )
+            return this
+        if( lines[0] != 'nextflow.scheduler.trace/v1' )
+            throw new IllegalStateException("Cannot parse scheduler trace file in version: ${lines[0]}")
+
+        for( int i=0; i<lines.size(); i++ ) {
+            final pair = lines[i].tokenize('=')
+            final name = pair[0]
+            final value = pair[1]
+            if( value == null )
+                continue
+            def val = parseLong(value, file, name)
+            this.put(name, val)
         }
 
         return this
