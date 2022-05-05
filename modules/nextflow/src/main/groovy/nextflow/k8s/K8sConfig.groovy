@@ -380,6 +380,8 @@ class K8sConfig implements Map<String,Object> {
 
         Boolean autoClose() { target.autoClose == null ? true : target.autoClose as Boolean }
 
+        String getCostFunction() { target.costFunction as String }
+
     }
 
     @CompileStatic

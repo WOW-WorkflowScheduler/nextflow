@@ -112,7 +112,8 @@ class K8sExecutor extends Executor {
                     volumeClaims : podOptions.volumeClaims,
                     copyStrategy : k8sConfig.getStorage()?.getCopyStrategy(),
                     locationAware : k8sConfig.locationAwareScheduling(),
-                    traceEnabled : traceEnabled
+                    traceEnabled : traceEnabled,
+                    costFunction : schedulerConfig.getCostFunction()
             ]
 
             schedulerClient.registerScheduler( data )
