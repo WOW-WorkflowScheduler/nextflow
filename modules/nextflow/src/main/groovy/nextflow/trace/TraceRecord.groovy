@@ -115,7 +115,11 @@ class TraceRecord implements Serializable {
             scheduler_tried_to_schedule: 'num',
             scheduler_init_runtime: 'num',
             scheduler_nodes_to_copy_from: 'num',
-            scheduler_time_to_schedule: 'num'
+            scheduler_time_to_schedule: 'num',
+            scheduler_nodes_tried: 'num',
+            scheduler_nodes_cost: 'str',
+            scheduler_could_stop_fetching: 'num',
+            scheduler_best_cost: 'num'
     ]
 
     static public Map<String,Closure<String>> FORMATTER = [
