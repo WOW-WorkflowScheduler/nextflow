@@ -498,8 +498,18 @@ class TraceRecord implements Serializable {
             final value = pair[1]
             if( value == null )
                 continue
-            def val = parseLong(value, file, name)
-            this.put(name, val)
+            switch( name ) {
+                case "scheduler_nodes_cost" :
+                    this.put( name, value )
+                    break
+                case "scheduler_best_cost" :
+                    def val = parseDouble( value, file, name )
+                    this.put( name, val )
+                    break
+                default:
+                    def val = parseLong(value, file, name)
+                    this.put(name, val)
+            }
         }
 
         return this
@@ -571,6 +581,16 @@ class TraceRecord implements Serializable {
         }
         catch( NumberFormatException e ) {
             log.debug "[WARN] Not a valid long number `$str` -- offending row: $row in file `$file`"
+            return 0
+        }
+    }
+
+    private long parseDouble( String str, Path file , String row )  {
+        try {
+            str.toDouble()
+        }
+        catch( NumberFormatException e ) {
+            log.debug "[WARN] Not a valid double number `$str` -- offending row: $row in file `$file`"
             return 0
         }
     }
