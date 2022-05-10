@@ -123,7 +123,8 @@ class TraceRecord implements Serializable {
             scheduler_nodes_tried: 'num',
             scheduler_nodes_cost: 'str',
             scheduler_could_stop_fetching: 'num',
-            scheduler_best_cost: 'num'
+            scheduler_best_cost: 'num',
+            scheduler_init_throughput: 'str'
     ]
 
     static public Map<String,Closure<String>> FORMATTER = [
@@ -504,6 +505,7 @@ class TraceRecord implements Serializable {
                 continue
             switch( name ) {
                 case "scheduler_nodes_cost" :
+                case "scheduler_init_throughput":
                     this.put( name, value )
                     break
                 case "scheduler_best_cost" :
