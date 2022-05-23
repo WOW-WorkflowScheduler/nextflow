@@ -103,7 +103,7 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
                 echo "\$OUTPUT"
             }
             export -f getStatsAndResolveSymlinks
-            """.stripIndent(true)
+            """.stripIndent(true) + '\n\n'
         return binding
     }
 
