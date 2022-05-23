@@ -733,7 +733,7 @@ class K8sTaskHandlerTest extends Specification {
         when:
         state = handler.getState()
         then:
-        1 * client.podState(POD_NAME) >> STATE1
+        1 * client.podState(POD_NAME,false) >> STATE1
         state == STATE1
 
         // second time `client.podState` NOT invoked
@@ -741,7 +741,7 @@ class K8sTaskHandlerTest extends Specification {
         when:
         state = handler.getState()
         then:
-        0 * client.podState(POD_NAME)
+        0 * client.podState(POD_NAME,false)
         state == STATE1
 
         // after more than a second `client.podState` is invoked
@@ -750,7 +750,7 @@ class K8sTaskHandlerTest extends Specification {
         sleep 1_500
         state = handler.getState()
         then:
-        1 * client.podState(POD_NAME) >> [:]
+        1 * client.podState(POD_NAME,false) >> [:]
         state == STATE1
 
         // still an empty status
@@ -758,7 +758,7 @@ class K8sTaskHandlerTest extends Specification {
         when:
         state = handler.getState()
         then:
-        1 * client.podState(POD_NAME) >> [:]
+        1 * client.podState(POD_NAME,false) >> [:]
         state == STATE1
 
         // now, the a valid status is returned
@@ -766,7 +766,7 @@ class K8sTaskHandlerTest extends Specification {
         when:
         state = handler.getState()
         then:
-        1 * client.podState(POD_NAME) >> STATE2
+        1 * client.podState(POD_NAME,false) >> STATE2
         state == STATE2
 
         // following invocation is cached
@@ -774,7 +774,7 @@ class K8sTaskHandlerTest extends Specification {
         when:
         state = handler.getState()
         then:
-        0 * client.podState(POD_NAME)
+        0 * client.podState(POD_NAME,false)
         state == STATE2
 
         // after a second, the a new invocation is executed
@@ -783,7 +783,7 @@ class K8sTaskHandlerTest extends Specification {
         sleep 1_500
         state = handler.getState()
         then:
-        1 * client.podState(POD_NAME) >> STATE3
+        1 * client.podState(POD_NAME,false) >> STATE3
         state == STATE3
     }
 
@@ -796,7 +796,7 @@ class K8sTaskHandlerTest extends Specification {
         when:
         def state = handler.getState()
         then:
-        1 * client.podState(POD_NAME) >> { throw new NodeTerminationException("Node shutdown happened") }
+        1 * client.podState(POD_NAME,false) >> { throw new NodeTerminationException("Node shutdown happened") }
         then:
         state.terminated.startedAt
         state.terminated.finishedAt

@@ -53,7 +53,7 @@ class K8sDriverLauncherTest extends Specification {
         1 * driver.makeConfig(NAME) >> NF_CONFIG
         1 * driver.makeK8sConfig(NF_CONFIG) >> K8S_CONFIG
         1 * driver.makeK8sClient(K8S_CONFIG) >> K8S_CLIENT
-        1 * K8S_CONFIG.checkStorageAndPaths(K8S_CLIENT)
+        1 * K8S_CONFIG.checkStorageAndPaths(K8S_CLIENT,NAME)
         1 * driver.createK8sConfigMap() >> null
         1 * driver.createK8sLauncherPod() >> null
         1 * driver.waitPodStart() >> null
