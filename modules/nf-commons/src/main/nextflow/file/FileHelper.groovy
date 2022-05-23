@@ -826,8 +826,7 @@ class FileHelper {
         final matcher = getPathMatcherFor("$syntax:${filePattern}", folder.fileSystem)
         final singleParam = action.getMaximumNumberOfParameters() == 1
 
-        final File outfiles = folder.resolve(".command.outfiles").toFile()
-        final boolean outFileExists = outfiles.exists()
+        final boolean outFileExists = new File(folder.resolve(".command.outfiles").toString()).exists()
 
         def visitor = new SimpleFileVisitor<Path>() {
 
