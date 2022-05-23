@@ -77,6 +77,8 @@ class PodSpecBuilder {
 
     String workDir
 
+    String initWorkDir
+
     Integer cpus
 
     String memory
@@ -149,6 +151,11 @@ class PodSpecBuilder {
 
     PodSpecBuilder withWorkDir( String path ) {
         this.workDir = path
+        return this
+    }
+
+    PodSpecBuilder withInitWorkDir( Path path ) {
+        this.initWorkDir = path.toString()
         return this
     }
 
@@ -476,8 +483,8 @@ class PodSpecBuilder {
                      command: initCommand
              ]
             spec.initContainers = [initContainer]
-            if( this.workDir )
-                initContainer.put('workingDir', workDir)
+            if( this.initWorkDir )
+                initContainer.put('workingDir', initWorkDir)
             if( imagePullPolicy )
                 initContainer.imagePullPolicy = imagePullPolicy
         }

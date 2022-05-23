@@ -244,6 +244,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
             task.initialized = false
             task.withInit = true
             builder.withInitImageName( storage.getImageName() )
+            builder.withInitWorkDir( task.workDir )
             builder.withInitCommand( ['bash',"-c", "${storage.getCmd().strip()} &> ${TaskRun.CMD_INIT_LOG}".toString()] )
         }
 
@@ -378,7 +379,8 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
                 task : task.processor.name,
                 stageInMode : task.getConfig().stageInMode,
                 cpus : task.config.getCpus(),
-                memoryInBytes : task.config.getMemory()?.toBytes()
+                memoryInBytes : task.config.getMemory()?.toBytes(),
+                workDir : task.getWorkDirStr()
         ]
 
 
