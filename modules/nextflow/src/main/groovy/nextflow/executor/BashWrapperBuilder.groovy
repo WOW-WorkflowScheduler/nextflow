@@ -270,7 +270,7 @@ class BashWrapperBuilder {
         binding.conda_activate = getCondaActivateSnippet()
         binding.spack_activate = getSpackActivateSnippet()
 
-        binding.K8sResolveSymlinks = ""
+        binding.K8sResolveSymlinks = null
 
         /*
          * add the task environment
