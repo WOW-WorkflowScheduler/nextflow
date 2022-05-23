@@ -133,7 +133,7 @@ class K8sExecutor extends Executor {
         for( PodHostMount entry : podOptions.hostMount ) {
             final name = 'vol-' + volume++
             mounts << [name: name, mountPath: entry.mountPath]
-            volumes << [name: name, hostPath: [path: entry.hostPath], type: 'DirectoryOrCreate']
+            volumes << [name: name, hostPath: [path: entry.hostPath]]
         }
 
         final namesMap = [:]
