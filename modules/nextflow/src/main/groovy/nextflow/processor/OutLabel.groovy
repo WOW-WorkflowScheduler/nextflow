@@ -26,6 +26,10 @@ class OutLabel {
             weight = params.weight as double
         }
 
+        if ( weight < 1.0 ) {
+            throw new IllegalStateException( "OutLabel weight cannot be below 1.0, was: $weight for label: $label" )
+        }
+
     }
 
     Map toMap(){
