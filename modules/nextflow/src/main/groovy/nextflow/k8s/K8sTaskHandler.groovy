@@ -381,7 +381,8 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
                 stageInMode : task.getConfig().stageInMode,
                 cpus : task.config.getCpus(),
                 memoryInBytes : task.config.getMemory()?.toBytes(),
-                workDir : task.getWorkDirStr()
+                workDir : task.getWorkDirStr(),
+                outLabel : task.config.getOutLabel()?.toMap()
         ]
 
 
