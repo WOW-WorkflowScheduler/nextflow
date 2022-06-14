@@ -381,6 +381,11 @@ class TaskConfig extends LazyMap implements Cloneable {
     def getContainer() {
         return get('container')
     }
+    
+    OutLabel getOutLabel(){
+        final def params = get("outLabel")
+        params ? new OutLabel( params as Map ) : null
+    }
 
     Architecture getArchitecture() {
         final value = get('arch')

@@ -71,6 +71,7 @@ class ProcessConfig implements Map<String,Object>, Cloneable {
             'maxInitRetries',
             'memory',
             'module',
+            'outLabel',
             'penv',
             'pod',
             'publishDir',
@@ -477,7 +478,8 @@ class ProcessConfig implements Map<String,Object>, Cloneable {
                 }
             }
             else if( !this.containsKey(key) || (DEFAULT_CONFIG.containsKey(key) && current==DEFAULT_CONFIG.get(key)) ) {
-                this.put(key, value)
+                if ( key == 'outLabel' ) this.outLabel( value )
+                else this.put(key, value)
             }
         }
     }
@@ -882,6 +884,60 @@ class ProcessConfig implements Map<String,Object>, Cloneable {
         }
         else {
             publishDir([path: target])
+        }
+        return this
+    }
+
+    /**
+     * Allow the user to specify outLabel directive as a map eg:
+     *
+     *     outLabel path:'someLabel', weight: 2
+     *
+     * @param params
+     *      A map representing the the outLabel setting
+     * @return
+     *      The {@link ProcessConfig} instance itself
+     */
+    ProcessConfig outLabel(Map params) {
+        if( !params )
+            return this
+        configProperties.put('outLabel', params)
+        return this
+    }
+
+    /**
+     * Allow the user to specify outLabel directive with a label and a list of named parameters, eg:
+     *
+     *     outLabel 'someLabel', weight: 2
+     *
+     * @param params
+     *      A map representing the outLabel properties
+     * @param target
+     *      The outLabel label
+     * @return
+     *      The {@link ProcessConfig} instance itself
+     */
+    ProcessConfig outLabel(Map params, target) {
+        params.put('label', target)
+        outLabel( params )
+    }
+
+    /**
+     * Allow the user to specify the outLabel as a string label, eg:
+     *
+     *      outLabel 'someLabel'
+     *
+     * @param target
+     *      The target outLabel label
+     * @return
+     *      The {@link ProcessConfig} instance itself
+     */
+    ProcessConfig outLabel( target ) {
+        if( target instanceof Map ) {
+            outLabel( target as Map )
+        }
+        else {
+            outLabel([label: target])
         }
         return this
     }
