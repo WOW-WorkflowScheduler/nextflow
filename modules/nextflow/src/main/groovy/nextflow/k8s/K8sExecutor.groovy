@@ -138,7 +138,7 @@ class K8sExecutor extends Executor {
         String configMapName = makeConfigMapName(content)
         tryCreateConfigMap(configMapName, configMap)
         log.debug "Created K8s configMap with name: $configMapName"
-        k8sConfig.getPodOptions().getMountConfigMaps().add( new PodMountConfig(configMapName, '/etc/nextflow', 73) )
+        k8sConfig.getPodOptions().getMountConfigMaps().add( new PodMountConfig(configMapName, '/etc/nextflow', 0111) )
     }
 
     protected void tryCreateConfigMap(String name, Map<String,String> data) {
