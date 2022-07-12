@@ -418,7 +418,6 @@ class PodSpecBuilder {
     Map build() {
         assert this.podName, 'Missing K8s podName parameter'
         assert this.imageName, 'Missing K8s imageName parameter'
-        assert this.command || this.args, 'Missing K8s command parameter'
 
         final restart = this.restart ?: 'Never'
 
