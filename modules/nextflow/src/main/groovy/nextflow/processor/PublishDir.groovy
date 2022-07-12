@@ -34,6 +34,8 @@ import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 import nextflow.Global
 import nextflow.NF
+import nextflow.exception.ProcessException
+import nextflow.k8s.localdata.LocalPath
 import nextflow.Session
 import nextflow.extension.FilesEx
 import nextflow.file.FileHelper
@@ -219,7 +221,11 @@ class PublishDir {
         if( pattern ) {
             this.matcher = FileHelper.getPathMatcherFor("glob:${pattern}", sourceFileSystem)
         }
-
+        int length = files.size()
+        files = files.findAll { ! it instanceof LocalPath }
+        if ( files.size() < length ) {
+            log.warn("${length - files.size()} file(s) are local and will be ignored")
+        }
         /*
          * iterate over the file parameter and publish each single file
          */
