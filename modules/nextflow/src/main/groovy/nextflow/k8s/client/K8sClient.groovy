@@ -700,6 +700,8 @@ class K8sClient {
         log.trace "[K8s] API request $method $path ${body ? '\n'+prettyPrint(body).indent() : ''}"
 
         if( body ) {
+            //Fix problem for large config maps send to the API Server
+            conn.setChunkedStreamingMode( 1024 * 256 )
             conn.setDoOutput(true);
             conn.setDoInput(true);
             conn.getOutputStream() << body
@@ -738,6 +740,18 @@ class K8sClient {
                 kind: 'ConfigMap',
                 metadata: [ name: name, namespace: config.namespace ],
                 data: data
+        ]
+
+        configCreate0(spec)
+    }
+
+    K8sResponseJson configCreateBinary(String name, Map data) {
+
+        final spec = [
+                apiVersion: 'v1',
+                kind: 'ConfigMap',
+                metadata: [ name: name, namespace: config.namespace ],
+                binaryData: data
         ]
 
         configCreate0(spec)

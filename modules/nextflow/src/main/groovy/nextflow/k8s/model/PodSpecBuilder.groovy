@@ -761,6 +761,9 @@ class PodSpecBuilder {
         if( entry.configKey ) {
             config.items = [ [key: entry.configKey, path: entry.fileName ] ]
         }
+        if( entry.defaultMode ) {
+            config.defaultMode = entry.defaultMode
+        }
 
         mounts << [name: volName, mountPath: entry.mountPath]
         volumes << [name: volName, configMap: config ]

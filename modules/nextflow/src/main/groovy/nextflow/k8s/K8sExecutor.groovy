@@ -16,6 +16,7 @@
 
 package nextflow.k8s
 
+import com.google.common.hash.Hashing
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
 import groovy.transform.PackageScope
@@ -23,19 +24,24 @@ import groovy.util.logging.Slf4j
 import nextflow.dag.DAG
 import nextflow.executor.Executor
 import nextflow.fusion.FusionHelper
+import nextflow.file.FileHelper
 import nextflow.k8s.client.K8sClient
 import nextflow.k8s.client.K8sResponseException
 import nextflow.k8s.client.K8sSchedulerClient
 import nextflow.k8s.model.PodHostMount
+import nextflow.k8s.model.PodMountConfig
 import nextflow.k8s.model.PodOptions
 import nextflow.k8s.model.PodVolumeClaim
 import nextflow.processor.TaskHandler
 import nextflow.processor.TaskMonitor
 import nextflow.processor.TaskPollingMonitor
 import nextflow.processor.TaskRun
+import nextflow.util.ConfigHelper
 import nextflow.util.Duration
 import nextflow.util.ServiceName
 
+import java.nio.file.NoSuchFileException
+import java.nio.file.Path
 import java.nio.file.Paths
 
 /**
@@ -96,6 +102,7 @@ class K8sExecutor extends Executor {
         //Create Daemonset to access local path on every node, maybe there is a better point to do this
         if( k8sConfig.locationAwareScheduling() ) {
             createDaemonSet()
+            registerGetStatsConfigMap()
         }
 
         final K8sConfig.K8sScheduler schedulerConfig = k8sConfig.getScheduler()
@@ -119,6 +126,39 @@ class K8sExecutor extends Executor {
             schedulerClient.registerScheduler( data )
         }
 
+    }
+
+    protected void registerGetStatsConfigMap() {
+        Map<String,String> configMap = [:]
+
+        final statFile = '/usr/local/bin/getStatsAndResolveSymlinks' as Path
+        final content = statFile.bytes.encodeBase64().toString()
+        configMap['getStatsAndResolveSymlinks'] = content
+
+        String configMapName = makeConfigMapName(content)
+        tryCreateConfigMap(configMapName, configMap)
+        log.debug "Created K8s configMap with name: $configMapName"
+        k8sConfig.getPodOptions().getMountConfigMaps().add( new PodMountConfig(configMapName, '/etc/nextflow', 73) )
+    }
+
+    protected void tryCreateConfigMap(String name, Map<String,String> data) {
+        try {
+            client.configCreateBinary(name, data)
+        }
+        catch( K8sResponseException e ) {
+            if( e.response.reason != 'AlreadyExists' )
+                throw e
+        }
+    }
+
+    protected String makeConfigMapName( String content ) {
+        "nf-get-stat-${hash(content)}"
+    }
+
+    protected String hash( String text) {
+        def hasher = Hashing .murmur3_32() .newHasher()
+        hasher.putUnencodedChars(text)
+        return hasher.hash().toString()
     }
 
     private void createDaemonSet(){

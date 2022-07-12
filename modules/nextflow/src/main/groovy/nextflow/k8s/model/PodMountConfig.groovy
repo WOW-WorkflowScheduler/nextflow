@@ -42,7 +42,9 @@ class PodMountConfig {
 
     String configKey
 
-    PodMountConfig( String config, String mount ) {
+    Integer defaultMode
+
+    PodMountConfig( String config, String mount, Integer defaultMode = null ) {
         assert config
         assert mount
 
@@ -57,10 +59,11 @@ class PodMountConfig {
         else {
             mountPath = path.toString()
         }
+        this.defaultMode = defaultMode
     }
 
     PodMountConfig( Map entry ) {
-        this(entry.config as String, entry.mountPath as String)
+        this(entry.config as String, entry.mountPath as String, entry.defaultMode as Integer)
     }
 
 }
