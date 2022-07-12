@@ -418,7 +418,7 @@ class K8sConfig implements Map<String,Object> {
         }
 
         String getImageName() {
-            target.imageName ?: 'alpine/k8s:1.20.7'
+            target.imageName ?: 'fondahub/vsftpd:latest'
         }
 
         String getCmd() {
