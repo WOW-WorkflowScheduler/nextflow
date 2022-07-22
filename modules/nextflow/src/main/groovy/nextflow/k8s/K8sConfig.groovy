@@ -382,6 +382,12 @@ class K8sConfig implements Map<String,Object> {
 
         String getCostFunction() { target.costFunction as String }
 
+        int getBatchSize() {
+            String s = target.batchSize as String
+            //Default: 1 -> No batching
+            s ? Integer.valueOf(s) : 1
+        }
+
     }
 
     @CompileStatic

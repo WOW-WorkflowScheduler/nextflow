@@ -565,6 +565,7 @@ class TaskPollingMonitor implements TaskMonitor {
                 if( !canSubmit(handler) )
                     continue
 
+                schedulerBatch?.startSubmit()
                 count++
                 handler.incProcessForks()
                 submit(handler)

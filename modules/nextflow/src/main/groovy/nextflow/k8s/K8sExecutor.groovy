@@ -110,7 +110,7 @@ class K8sExecutor extends Executor {
         if( schedulerConfig ) {
             schedulerClient = new K8sSchedulerClient(schedulerConfig, k8sConfig.getNamespace(), session.runName, client,
                     k8sConfig.getPodOptions().getHostMount(), k8sConfig.getPodOptions().getVolumeClaims())
-            this.schedulerBatch.setSchedulerClient( schedulerClient )
+            this.schedulerBatch?.setSchedulerClient( schedulerClient )
             final PodOptions podOptions = k8sConfig.getPodOptions()
             Boolean traceEnabled = session.config.navigate('trace.enabled') as Boolean
             Map data = [
@@ -283,7 +283,9 @@ class K8sExecutor extends Executor {
      */
     @Override
     protected TaskMonitor createTaskMonitor() {
-        if ( k8sConfig.getScheduler() ) this.schedulerBatch = new K8sSchedulerBatch()
+        if ( k8sConfig.getScheduler()?.getBatchSize() > 1 ) {
+            this.schedulerBatch = new K8sSchedulerBatch( k8sConfig.getScheduler().getBatchSize() )
+        }
         TaskPollingMonitor.create(session, name, 100, Duration.of('5 sec'), this.schedulerBatch )
     }
 
