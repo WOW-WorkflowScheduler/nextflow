@@ -103,6 +103,7 @@ class K8sSchedulerClient {
                     .withImageName( schedulerConfig.getContainer() )
                     .withPodName( schedulerConfig.getName() )
                     .withCpus( schedulerConfig.getCPUs() )
+                    .withMemory( schedulerConfig.getMemory() )
                     .withImagePullPolicy( schedulerConfig.getImagePullPolicy() )
                     .withServiceAccount( schedulerConfig.getServiceAccount() )
                     .withNamespace( namespace )
@@ -110,6 +111,9 @@ class K8sSchedulerClient {
                     .withLabel('tier', 'control-plane')
                     .withHostMounts( hostMounts )
                     .withVolumeClaims( volumeClaims )
+
+            if( schedulerConfig.getNodeSelector() )
+                builder.setNodeSelector( schedulerConfig.getNodeSelector() )
 
             if ( schedulerConfig.getWorkDir() )
                     builder.withWorkDir( schedulerConfig.getWorkDir() )

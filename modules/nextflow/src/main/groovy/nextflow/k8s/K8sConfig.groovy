@@ -368,6 +368,8 @@ class K8sConfig implements Map<String,Object> {
 
         Integer getCPUs() { target.cpu as Integer ?: 1 }
 
+        String getMemory() { target.memory as String ?: "1400Mi" }
+
         String getContainer() { target.container as String ?: 'fondahub/workflow-k8s-scheduler:latest' }
 
         String getCommand() { target.command as String }
@@ -381,6 +383,10 @@ class K8sConfig implements Map<String,Object> {
         Boolean autoClose() { target.autoClose == null ? true : target.autoClose as Boolean }
 
         String getCostFunction() { target.costFunction as String }
+
+        PodNodeSelector getNodeSelector(){
+            return target.nodeSelector ? new PodNodeSelector( target.nodeSelector ) : null
+        }
 
         int getBatchSize() {
             String s = target.batchSize as String
