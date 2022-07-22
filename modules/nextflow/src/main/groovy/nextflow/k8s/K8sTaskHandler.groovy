@@ -101,6 +101,14 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
     
     private Integer initError = null
 
+    private long createBashWrapperTime = -1
+
+    private long createRequestTime = -1
+
+    private long submitToSchedulerTime = -1
+
+    private long submitToK8sTime = -1
+
     K8sTaskHandler( TaskRun task, K8sExecutor executor ) {
         super(task)
         this.executor = executor
@@ -396,15 +404,26 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
     @Override
     @CompileDynamic
     void submit() {
+        long start = System.currentTimeMillis()
         builder = createBashWrapper(task)
         builder.build()
+        createBashWrapperTime = System.currentTimeMillis() - start
 
+        start = System.currentTimeMillis()
         final req = newSubmitRequest(task)
+        createRequestTime = System.currentTimeMillis() - start
 
-		if( schedulerClient ) registerTask()
+		if( schedulerClient ) {
+            start = System.currentTimeMillis()
+            registerTask()
+            submitToSchedulerTime = System.currentTimeMillis() - start
+        }
+
+        start = System.currentTimeMillis()
         final resp = useJobResource()
                 ? client.jobCreate(req, yamlDebugPath())
                 : client.podCreate(req, yamlDebugPath())
+        submitToK8sTime = System.currentTimeMillis() - start
 
         if( !resp.metadata?.name )
             throw new K8sResponseException("Missing created ${resourceType.lower()} name", resp)
@@ -640,6 +659,10 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         final result = super.getTraceRecord()
         result.put('native_id', podName)
         result.put( 'hostname', runsOnNode )
+        result.put(  "create_bash_wrapper_time", createBashWrapperTime )
+        result.put(  "create_request_time", createRequestTime )
+        result.put(  "submit_to_scheduler_time", submitToSchedulerTime )
+        result.put(  "submit_to_k8s_time", submitToK8sTime )
         return result
     }
 

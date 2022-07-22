@@ -60,73 +60,80 @@ class TraceRecord implements Serializable {
     final public static List<String> NON_PRIMITIVE_TYPES = ['date','time','perc','mem']
 
     final public static Map<String,String> FIELDS = [
-            task_id:    'str',
-            hash:       'str',
-            native_id:  'str',
-            process:    'str',
-            module:     'str',
-            container:  'str',
-            tag:        'str',
-            name:       'str',
-            status:     'str',
-            exit:       'str',
-            submit:     'date',
-            start:      'date',
-            complete:   'date',
-            duration:   'time',
-            realtime:   'time',
-            '%cpu':     'perc',     // -- ps field '%cpu'
-            '%mem':     'perc',     // -- ps field '%mem'
-            rss:        'mem',      // -- ps field 'rss'
-            vmem:       'mem',      // -- ps field 'vsize'
-            peak_rss:   'mem',      // -- /proc/$pid/status field 'VmHWM'  (Peak resident set size i.e. high water mark)
-            peak_vmem:  'mem',      // -- /proc/$pid/status field 'VmPeak' (Peak virtual memory size)
-            rchar:      'mem',      // -- /proc/$pid/io
-            wchar:      'mem',      // -- /proc/$pid/io
-            syscr:      'num',      // -- /proc/$pid/io
-            syscw:      'num',      // -- /proc/$pid/io
-            read_bytes: 'mem',      // -- /proc/$pid/io
-            write_bytes:'mem',      // -- /proc/$pid/io
-            attempt:    'num',
-            workdir:    'str',
-            script:     'str',
-            scratch:    'str',
-            queue:      'str',
-            cpus:       'num',
-            memory:     'mem',
-            disk:       'mem',
-            time:       'time',
-            env:        'str',
-            error_action:'str',
-            vol_ctxt: 'num',
-            inv_ctxt: 'num',
-            hostname: 'str',
-            cpu_model:'str'
-            out_label:'str',
-            scheduler_files_bytes: 'num',
-            scheduler_files_node_bytes: 'num',
+            task_id:                               'str',
+            hash:                                  'str',
+            native_id:                             'str',
+            process:                               'str',
+            module:                                'str',
+            container:                             'str',
+            tag:                                   'str',
+            name:                                  'str',
+            status:                                'str',
+            exit:                                  'str',
+            submit:                                'date',
+            start:                                 'date',
+            complete:                              'date',
+            duration:                              'time',
+            realtime:                              'time',
+            '%cpu':                                'perc',     // -- ps field '%cpu'
+            '%mem':                                'perc',     // -- ps field '%mem'
+            rss:                                   'mem',      // -- ps field 'rss'
+            vmem:                                  'mem',      // -- ps field 'vsize'
+            peak_rss:                              'mem',      // -- /proc/$pid/status field 'VmHWM'  (Peak resident set size i.e. high water mark)
+            peak_vmem:                             'mem',      // -- /proc/$pid/status field 'VmPeak' (Peak virtual memory size)
+            rchar:                                 'mem',      // -- /proc/$pid/io
+            wchar:                                 'mem',      // -- /proc/$pid/io
+            syscr:                                 'num',      // -- /proc/$pid/io
+            syscw:                                 'num',      // -- /proc/$pid/io
+            read_bytes:                            'mem',      // -- /proc/$pid/io
+            write_bytes:                           'mem',      // -- /proc/$pid/io
+            attempt:                               'num',
+            workdir:                               'str',
+            script:                                'str',
+            scratch:                               'str',
+            queue:                                 'str',
+            cpus:                                  'num',
+            memory:                                'mem',
+            disk:                                  'mem',
+            time:                                  'time',
+            env:                                   'str',
+            error_action:                          'str',
+            vol_ctxt:                              'num',
+            inv_ctxt:                              'num',
+            hostname:                              'str',
+            cpu_model:                             'str'
+            out_label:                             'str',
+            scheduler_files_bytes:                 'num',
+            scheduler_files_node_bytes:            'num',
             scheduler_files_node_other_task_bytes: 'num',
-            scheduler_files: 'num',
-            scheduler_files_node: 'num',
-            scheduler_files_node_other_task: 'num',
-            scheduler_depending_task: 'num',
-            scheduler_time_in_queue: 'num',
-            scheduler_place_in_queue: 'num',
-            scheduler_location_count: 'num',
-            scheduler_tried_to_schedule: 'num',
-            scheduler_init_runtime: 'num',
-            scheduler_init_errors: 'num',
-            scheduler_init_symlinks_runtime: 'num',
-            scheduler_init_download_runtime: 'num',
-            scheduler_init_depending_tasks_runtime: 'num',
-            scheduler_nodes_to_copy_from: 'num',
-            scheduler_time_to_schedule: 'num',
-            scheduler_nodes_tried: 'num',
-            scheduler_nodes_cost: 'str',
-            scheduler_could_stop_fetching: 'num',
-            scheduler_best_cost: 'num',
-            scheduler_init_throughput: 'str',
-            scheduler_no_alignment_found: 'num'
+            scheduler_files:                       'num',
+            scheduler_files_node:                  'num',
+            scheduler_files_node_other_task:       'num',
+            scheduler_depending_task:              'num',
+            scheduler_time_in_queue:               'num',
+            scheduler_place_in_queue:              'num',
+            scheduler_location_count:              'num',
+            scheduler_tried_to_schedule:           'num',
+            scheduler_init_runtime:                'num',
+            scheduler_init_errors:                 'num',
+            scheduler_init_symlinks_runtime:       'num',
+            scheduler_init_download_runtime:       'num',
+            scheduler_init_depending_tasks_runtime:'num',
+            scheduler_nodes_to_copy_from:          'num',
+            scheduler_time_to_schedule:            'num',
+            scheduler_nodes_tried:                 'num',
+            scheduler_nodes_cost:                  'str',
+            scheduler_could_stop_fetching:         'num',
+            scheduler_best_cost:                   'num',
+            scheduler_init_throughput:             'str',
+            scheduler_no_alignment_found:          'num',
+            scheduler_delta_schedule_submitted:    'num',
+            scheduler_delta_schedule_alignment:    'num',
+            scheduler_batch_id:                    'num',
+            scheduler_delta_batch_start_submitted: 'num',
+            scheduler_delta_batch_start_received:  'num',
+            scheduler_delta_batch_closed_batch_end:'num',
+            scheduler_delta_submitted_batch_end:   'num',
     ]
 
     static public Map<String,Closure<String>> FORMATTER = [
