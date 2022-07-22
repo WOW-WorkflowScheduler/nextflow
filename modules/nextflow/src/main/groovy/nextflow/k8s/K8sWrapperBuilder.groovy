@@ -66,55 +66,24 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
      */
     protected K8sWrapperBuilder() {}
 
-    @Override
-    protected Map<String,String> makeBinding() {
-        def binding = super.makeBinding()
-        binding.K8sResolveSymlinks = """\
-            getStatsAndResolveSymlinks() {
-                local STARTFILE="\$1"
-                local ENDFILE="\$(readlink -f "\$STARTFILE")"
-                [ -f "\$ENDFILE" ] && local EXISTS=1 || local EXISTS=0
-                if command -v stat &> /dev/null
-                then
-                    local INFO="\$(stat -c "%s;%F;%w;%x;%y" "\$ENDFILE")"
-                else
-                    local SIZE=\$(ls -ld "\$ENDFILE" | awk '{print \$5}')
-                    local TMP=\$(ls -ld "\$ENDFILE" | awk '{print \$1}')
-                    local TMP=\${TMP:0:1}
-                    local TYPE="unknown"
-                    if [ "\$TMP" = "-" ]
-                    then
-                        local TYPE="regular file"
-                    elif [ "\$TMP" = "d" ]
-                    then
-                        local TYPE="directory"
-                    elif [ "\$TMP" = "l" ]
-                    then
-                        local TYPE="symbolic link"
-                    fi
-                    local CREATIONTIME="-"
-                    # ATTENTION: smallest time unit of these timestamps is one second!
-                    local ACCESSTIME=\$(ls -ldeu "\$ENDFILE" | awk '{print \$7" "\$8" "\$9" "\$10}')
-                    local MODIFTIME=\$(ls -ldet "\$ENDFILE" | awk '{print \$7" "\$8" "\$9" "\$10}')
-                    local INFO="\$SIZE;\$TYPE;\$CREATIONTIME;\$ACCESSTIME;\$MODIFTIME"
-                fi
-                [ "\$STARTFILE" = "\$ENDFILE" ] && local ENDFILE=""
-                local OUTPUT="\$STARTFILE;\$EXISTS;\$ENDFILE;\$INFO"
-                echo "\$OUTPUT"
-            }
-            export -f getStatsAndResolveSymlinks
-            """.stripIndent(true) + '\n\n'
-        return binding
+    private String getStorageLocalWorkDir() {
+        String localWorkDir = storage.getWorkdir()
+        if ( !localWorkDir.endsWith("/") ){
+            localWorkDir += "/"
+        }
+        localWorkDir
     }
 
     @Override
     protected String getLaunchCommand(String interpreter, String env) {
         String cmd = ''
         if( storage && localWorkDir ){
-            cmd += "find -L \$PWD -exec bash -c \"getStatsAndResolveSymlinks '{}'\" \\;"
-            cmd += "> ${workDir.toString()}/.command.infiles || true\n"
+            cmd += "local INFILESTIME=\$(/etc/nextflow/getStatsAndResolveSymlinks infiles \"${workDir.toString()}/.command.infiles\" \"${getStorageLocalWorkDir()}\" \"\$PWD/\" || true)\n"
         }
         cmd += super.getLaunchCommand(interpreter, env)
+        if( storage && localWorkDir && isTraceRequired() ){
+            cmd += """\necho \"infiles_time=\${INFILESTIME}" >> ${TaskRun.CMD_TRACE}\n"""
+        }
         return cmd
     }
 
@@ -122,8 +91,10 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
     String getCleanupCmd(String scratch) {
         String cmd = super.getCleanupCmd( scratch )
         if( storage && localWorkDir ){
-            cmd += "find -L ${localWorkDir.toString()} -exec bash -c \"getStatsAndResolveSymlinks '{}'\" \\;"
-            cmd += "> ${workDir.toString()}/.command.outfiles || true"
+            cmd += "local OUTFILESTIME=\$(/etc/nextflow/getStatsAndResolveSymlinks outfiles \"${workDir.toString()}/.command.outfiles\" \"${getStorageLocalWorkDir()}\" \"${localWorkDir.toString()}\" || true)\n"
+            if ( isTraceRequired() ) {
+                cmd += "echo \"outfiles_time=\${OUTFILESTIME}\" >> ${workDir.resolve(TaskRun.CMD_TRACE)}"
+            }
         }
         return cmd
     }

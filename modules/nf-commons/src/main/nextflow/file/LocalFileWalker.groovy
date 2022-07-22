@@ -45,10 +45,6 @@ class LocalFileWalker {
 
                 String path = data[ VIRTUAL_PATH ]
 
-                if( path.startsWith('\'') && path.endsWith('\'') ) {
-                    path = path.substring( 1, path.length() - 1 )
-                }
-
                 //If Symlink & not followLinks
                 //split path
                 //save it, and ignore everything at the path behind that
