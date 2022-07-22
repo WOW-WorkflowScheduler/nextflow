@@ -51,7 +51,7 @@ class LocalFileWalker {
 
                 if ( parent && path.startsWith(parent) ) {
                     if ( skip ) {
-                        log.info "Skip $path"
+                        log.trace "Skip $path"
                         continue
                     }
                 } else {
