@@ -116,7 +116,7 @@ class K8sSchedulerClient {
                 builder.setNodeSelector( schedulerConfig.getNodeSelector() )
 
             if ( schedulerConfig.getWorkDir() )
-                    builder.withWorkDir( schedulerConfig.getWorkDir() )
+                builder.withWorkDir( schedulerConfig.getWorkDir() )
 
             if( schedulerConfig.getCommand() )
                 builder.withCommand( schedulerConfig.getCommand() )
