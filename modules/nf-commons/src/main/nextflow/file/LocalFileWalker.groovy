@@ -59,16 +59,25 @@ class LocalFileWalker {
                 }
 
                 FileAttributes attributes = new FileAttributes( data )
-
-                Path p = createLocalPath.apply( Paths.get(path), attributes, workDir )
-                if ( attributes.isDirectory() ) {
-                    def visitDirectory = visitor.preVisitDirectory( p, attributes )
-                    if( visitDirectory == FileVisitResult.SKIP_SUBTREE ){
-                        skip = true
-                        parent = path
+                Path currentPath = Paths.get(path)
+                if ( !attributes.local ) {
+                    //If task did not run on local machine, create symbolic link
+                    if ( !Files.isSymbolicLink( currentPath ) ) {
+                        Files.createDirectories( currentPath.getParent() )
+                        Files.createSymbolicLink( currentPath, attributes.destination )
                     }
+                    Files.walkFileTree( currentPath, options, maxDepth, visitor)
                 } else {
-                    visitor.visitFile( p, attributes)
+                    Path p = createLocalPath.apply( currentPath, attributes, workDir )
+                    if ( attributes.isDirectory() ) {
+                        def visitDirectory = visitor.preVisitDirectory( p, attributes )
+                        if( visitDirectory == FileVisitResult.SKIP_SUBTREE ){
+                            skip = true
+                            parent = path
+                        }
+                    } else {
+                        visitor.visitFile( p, attributes)
+                    }
                 }
             }
         }
@@ -86,6 +95,7 @@ class LocalFileWalker {
         private final FileTime accessDate
         private final FileTime modificationDate
         private final Path destination
+        private final boolean local
 
         FileAttributes( String[] data ) {
             if ( data.length != 8 && data[ FILE_EXISTS ] != "0" ) throw new RuntimeException( "Cannot parse row (8 columns required): ${data.join(',')}" )
@@ -106,6 +116,12 @@ class LocalFileWalker {
             this.accessDate = DateParser.fileTimeFromString(data[ ACCESS_DATE ])
             this.modificationDate = DateParser.fileTimeFromString(data[ MODIFICATION_DATE ])
             this.creationDate = DateParser.fileTimeFromString(data[ CREATION_DATE ]) ?: this.modificationDate
+            if ( fileType.startsWith("non-local ") ) {
+                this.local = false
+                this.fileType = fileType.substring( 10 )
+            } else {
+                this.local = true
+            }
             this.directory = fileType == 'directory'
             if ( !directory && !fileType.contains( 'file' ) ){
                 log.error( "Unknown type: $fileType" )
