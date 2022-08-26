@@ -113,7 +113,7 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
     String getCleanupCmd(String scratch) {
         String cmd = super.getCleanupCmd( scratch )
         if( storage && localWorkDir ){
-            cmd += "local OUTFILESTIME=\$(/etc/nextflow/getStatsAndResolveSymlinks outfiles \"${workDir.toString()}/.command.outfiles\" \"${getStorageLocalWorkDir()}\" \"${localWorkDir.toString()}\" || true)\n"
+            cmd += "local OUTFILESTIME=\$(/etc/nextflow/getStatsAndResolveSymlinks outfiles \"${workDir.toString()}/.command.outfiles\" \"${getStorageLocalWorkDir()}\" \"${localWorkDir.toString()}/\" || true)\n"
             if ( isTraceRequired() ) {
                 cmd += "echo \"outfiles_time=\${OUTFILESTIME}\" >> ${workDir.resolve(TaskRun.CMD_TRACE)}"
             }
