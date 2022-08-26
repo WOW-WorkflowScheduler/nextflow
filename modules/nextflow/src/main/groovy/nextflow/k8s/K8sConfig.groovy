@@ -437,6 +437,10 @@ class K8sConfig implements Map<String,Object> {
             target.cmd as String ?: "./$TaskRun.CMD_INIT_RUN"
         }
 
+        boolean withInitContainers() {
+            return "true".equalsIgnoreCase(target.initContainers as String)
+        }
+
     }
 }
 
