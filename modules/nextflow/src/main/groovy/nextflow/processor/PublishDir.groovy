@@ -222,7 +222,7 @@ class PublishDir {
             this.matcher = FileHelper.getPathMatcherFor("glob:${pattern}", sourceFileSystem)
         }
         int length = files.size()
-        files = files.findAll { ! it instanceof LocalPath }
+        files = files.findAll { !(it instanceof LocalPath) }
         if ( files.size() < length ) {
             log.warn("${length - files.size()} file(s) are local and will be ignored")
         }
