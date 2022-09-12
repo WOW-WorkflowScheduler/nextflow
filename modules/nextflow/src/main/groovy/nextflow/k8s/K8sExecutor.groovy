@@ -216,6 +216,9 @@ class K8sExecutor extends Executor {
                 apiVersion: 'apps/v1',
                 kind: 'DaemonSet',
                 metadata: [
+                        labels: [
+                                app: 'nextflow'
+                        ],
                         name: name,
                         namespace: k8sConfig.getNamespace() ?: 'default'
                 ],
@@ -224,7 +227,8 @@ class K8sExecutor extends Executor {
                         template: [
                                 metadata: [
                                         labels: [
-                                                name : name
+                                                name : name,
+                                                app: 'nextflow'
                                         ]
                                 ],
                                 spec: spec,

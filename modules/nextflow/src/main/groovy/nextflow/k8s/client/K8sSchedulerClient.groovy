@@ -109,6 +109,7 @@ class K8sSchedulerClient {
                     .withNamespace( namespace )
                     .withLabel('component', 'scheduler')
                     .withLabel('tier', 'control-plane')
+                    .withLabel('app', 'nextflow')
                     .withHostMounts( hostMounts )
                     .withVolumeClaims( volumeClaims )
 
