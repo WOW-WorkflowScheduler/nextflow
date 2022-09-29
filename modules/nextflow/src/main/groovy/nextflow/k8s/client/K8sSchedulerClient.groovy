@@ -70,7 +70,7 @@ class K8sSchedulerClient {
     }
 
     private String getDNS(){
-        return "http://${ip.replace('.','-')}.${namespace}.pod.cluster.local:${schedulerConfig.getPort()}"
+        return "http://${ip.replace('.','-')}.${namespace}.pod.cluster.local:${schedulerConfig.getPort()}/v1/"
     }
 
     private void startScheduler(){
@@ -163,19 +163,21 @@ class K8sSchedulerClient {
 
         startScheduler()
 
-        String url = "${getDNS()}/scheduler/registerScheduler/$namespace/$runName/${schedulerConfig.getStrategy()}"
+        String url = "${getDNS()}/scheduler/$runName"
         registered = true;
         int trials = 0
         while ( trials++ < 50 ) {
             try {
-                HttpURLConnection put = new URL(url).openConnection() as HttpURLConnection
-                put.setRequestMethod( "PUT" )
-                put.setDoOutput(true)
-                put.setRequestProperty("Content-Type", "application/json")
+                HttpURLConnection post = new URL(url).openConnection() as HttpURLConnection
+                post.setRequestMethod( "POST" )
+                post.setDoOutput(true)
+                post.setRequestProperty("Content-Type", "application/json")
                 data.dns = getDNS()
+                data.namespace = namespace
+                data.strategy = schedulerConfig.getStrategy()
                 String message = JsonOutput.toJson( data )
-                put.getOutputStream().write(message.getBytes("UTF-8"))
-                int responseCode = put.getResponseCode()
+                post.getOutputStream().write(message.getBytes("UTF-8"))
+                int responseCode = post.getResponseCode()
                 if( responseCode != 200 ){
                     throw new IllegalStateException( "Got code: ${responseCode} from k8s scheduler while registering" )
                 }
@@ -195,39 +197,39 @@ class K8sSchedulerClient {
     synchronized void closeScheduler(){
         if ( closed ) return
         closed = true;
-        HttpURLConnection post = new URL("${getDNS()}/scheduler/$namespace/$runName").openConnection() as HttpURLConnection
+        HttpURLConnection post = new URL("${getDNS()}/scheduler/$runName").openConnection() as HttpURLConnection
         post.setRequestMethod( "DELETE" )
         int responseCode = post.getResponseCode()
         log.trace "Delete scheduler code was: ${responseCode}"
     }
 
-    Map registerTask( Map config ){
+    Map registerTask( Map config, int id ){
 
-        HttpURLConnection put = new URL("${getDNS()}/scheduler/registerTask/$namespace/$runName").openConnection() as HttpURLConnection
-        put.setRequestMethod( "PUT" )
+        HttpURLConnection post = new URL("${getDNS()}/scheduler/$runName/task/$id").openConnection() as HttpURLConnection
+        post.setRequestMethod( "POST" )
         String message = JsonOutput.toJson( config )
-        put.setDoOutput(true)
-        put.setRequestProperty("Content-Type", "application/json")
-        put.getOutputStream().write(message.getBytes("UTF-8"));
-        int responseCode = put.getResponseCode()
+        post.setDoOutput(true)
+        post.setRequestProperty("Content-Type", "application/json")
+        post.getOutputStream().write(message.getBytes("UTF-8"));
+        int responseCode = post.getResponseCode()
         if( responseCode != 200 ){
             throw new IllegalStateException( "Got code: ${responseCode} from nextflow scheduler, while registering task: ${config.name}" )
         }
         tasksInBatch++
-        Map response = new JsonSlurper().parse(put.getInputStream()) as Map
+        Map response = new JsonSlurper().parse(post.getInputStream()) as Map
         return response
 
     }
 
     private void batch( String command ){
-        HttpURLConnection post = new URL("${getDNS()}/scheduler/${command}Batch/$namespace/$runName").openConnection() as HttpURLConnection
-        post.setRequestMethod( "POST" )
+        HttpURLConnection put = new URL("${getDNS()}/scheduler/$runName/${command}Batch").openConnection() as HttpURLConnection
+        put.setRequestMethod( "PUT" )
         if ( command == 'end' ){
-            post.setDoOutput(true)
-            post.setRequestProperty("Content-Type", "application/json")
-            post.getOutputStream().write("$tasksInBatch".getBytes("UTF-8"));
+            put.setDoOutput(true)
+            put.setRequestProperty("Content-Type", "application/json")
+            put.getOutputStream().write("$tasksInBatch".getBytes("UTF-8"));
         }
-        int responseCode = post.getResponseCode()
+        int responseCode = put.getResponseCode()
         if( responseCode != 200 ){
             throw new IllegalStateException( "Got code: ${responseCode} from nextflow scheduler, while ${command}ing batch" )
         }
@@ -242,9 +244,9 @@ class K8sSchedulerClient {
         if ( !closed ) batch('end')
     }
 
-    Map getTaskState( String podname ){
+    Map getTaskState( int id ){
 
-        HttpURLConnection get = new URL("${getDNS()}/scheduler/taskstate/$namespace/$runName/$podname").openConnection() as HttpURLConnection
+        HttpURLConnection get = new URL("${getDNS()}/scheduler/$runName/task/$id").openConnection() as HttpURLConnection
         get.setRequestMethod( "GET" )
         get.setDoOutput(true)
         int responseCode = get.getResponseCode()
@@ -259,7 +261,7 @@ class K8sSchedulerClient {
     Map getFileLocation( String path ){
 
         String pathEncoded = URLEncoder.encode(path,'utf-8')
-        HttpURLConnection get = new URL("${getDNS()}/file/$namespace/$runName?path=$pathEncoded").openConnection() as HttpURLConnection
+        HttpURLConnection get = new URL("${getDNS()}/file/$runName?path=$pathEncoded").openConnection() as HttpURLConnection
         get.setRequestMethod( "GET" )
         get.setDoOutput(true)
         int responseCode = get.getResponseCode()
@@ -273,7 +275,7 @@ class K8sSchedulerClient {
 
     String getDaemonOnNode( String node ){
 
-        HttpURLConnection get = new URL("${getDNS()}/daemon/$namespace/$runName/$node").openConnection() as HttpURLConnection
+        HttpURLConnection get = new URL("${getDNS()}/daemon/$runName/$node").openConnection() as HttpURLConnection
         get.setRequestMethod( "GET" )
         get.setDoOutput(true)
         int responseCode = get.getResponseCode()
@@ -289,7 +291,7 @@ class K8sSchedulerClient {
 
         String method = overwrite ? 'overwrite' : 'add'
 
-        HttpURLConnection get = new URL("${getDNS()}/file/location/${method}/$namespace/$runName${ node ? "/$node" : ''}").openConnection() as HttpURLConnection
+        HttpURLConnection get = new URL("${getDNS()}/file/$runName/location/${method}${ node ? "/$node" : ''}").openConnection() as HttpURLConnection
         get.setRequestMethod( "POST" )
         get.setDoOutput(true)
         Map data = [
@@ -314,8 +316,8 @@ class K8sSchedulerClient {
     ///* DAG */
 
     private submitVertices( List vertices ){
-        HttpURLConnection put = new URL("${getDNS()}/scheduler/DAG/addVertices/$namespace/$runName").openConnection() as HttpURLConnection
-        put.setRequestMethod( "PUT" )
+        HttpURLConnection put = new URL("${getDNS()}/scheduler/$runName/DAG/vertices").openConnection() as HttpURLConnection
+        put.setRequestMethod( "POST" )
         String message = JsonOutput.toJson( vertices )
         put.setDoOutput(true)
         put.setRequestProperty("Content-Type", "application/json")
@@ -327,8 +329,8 @@ class K8sSchedulerClient {
     }
 
     private submitEdges( List edges ){
-        HttpURLConnection put = new URL("${getDNS()}/scheduler/DAG/addEdges/$namespace/$runName").openConnection() as HttpURLConnection
-        put.setRequestMethod( "PUT" )
+        HttpURLConnection put = new URL("${getDNS()}/scheduler/$runName/DAG/edges").openConnection() as HttpURLConnection
+        put.setRequestMethod( "POST" )
         String message = JsonOutput.toJson( edges )
         put.setDoOutput(true)
         put.setRequestProperty("Content-Type", "application/json")

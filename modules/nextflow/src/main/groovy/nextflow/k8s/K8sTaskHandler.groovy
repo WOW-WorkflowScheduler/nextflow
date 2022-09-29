@@ -378,7 +378,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         }
 
         Map config = [
-                hash : "nf-${task.hash}",
+                runName : "nf-${task.hash}",
                 inputs : [
                         booleanInputs : booleanInputs,
                         numberInputs  : numberInputs,
@@ -396,7 +396,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         ]
 
 
-        return schedulerClient.registerTask( config )
+        return schedulerClient.registerTask( config, task.id.intValue() )
 
     }
 
@@ -529,7 +529,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
     }
 
     boolean schedulerPostProcessingHasFinished(){
-        Map state = schedulerClient.getTaskState(podName)
+        Map state = schedulerClient.getTaskState(task.id.intValue())
         return (!state.state) ?: ["FINISHED", "FINISHED_WITH_ERROR", "INIT_WITH_ERRORS", "DELETED"].contains( state.state.toString() )
     }
 
