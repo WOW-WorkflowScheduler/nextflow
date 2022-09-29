@@ -372,6 +372,7 @@ class K8sSchedulerClient {
 
     private extractEdge( DAG.Edge e ){
         return [
+                uid : e.getId(),
                 label : e.getLabel(),
                 from : e.getFrom().getId(),
                 to : e.getTo().getId()
