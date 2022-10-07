@@ -384,6 +384,10 @@ class K8sConfig implements Map<String,Object> {
 
         String getCostFunction() { target.costFunction as String }
 
+        Integer getMaxCopyTasksPerNode() { target.maxCopyTasksPerNode as Integer }
+
+        Integer getMaxWaitingCopyTasksPerNode() { target.maxWaitingCopyTasksPerNode as Integer }
+
         PodNodeSelector getNodeSelector(){
             return target.nodeSelector ? new PodNodeSelector( target.nodeSelector ) : null
         }

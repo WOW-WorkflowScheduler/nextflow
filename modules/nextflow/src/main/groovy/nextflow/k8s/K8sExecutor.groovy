@@ -120,7 +120,9 @@ class K8sExecutor extends Executor {
                     copyStrategy : k8sConfig.getStorage()?.getCopyStrategy(),
                     locationAware : k8sConfig.locationAwareScheduling(),
                     traceEnabled : traceEnabled,
-                    costFunction : schedulerConfig.getCostFunction()
+                    costFunction : schedulerConfig.getCostFunction(),
+                    maxCopyTasksPerNode : schedulerConfig.getMaxCopyTasksPerNode(),
+                    maxWaitingCopyTasksPerNode : schedulerConfig.getMaxWaitingCopyTasksPerNode()
             ]
 
             schedulerClient.registerScheduler( data )
