@@ -37,7 +37,7 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
     K8sConfig.Storage storage
 
     K8sWrapperBuilder(TaskRun task, K8sConfig.Storage storage) {
-        super(task)
+        this(task)
         this.storage = storage
         if( storage ){
             switch (storage.getCopyStrategy().toLowerCase()) {
