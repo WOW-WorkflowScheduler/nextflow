@@ -449,14 +449,14 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
     /**
      * @return Retrieve the submitted pod state
      */
-    protected Map getState( boolean initContainer = false ) {
+    protected Map getState() {
         final now = System.currentTimeMillis()
         try {
             final delta =  now - timestamp;
             if( !state || delta >= 1_000) {
                 def newState = useJobResource()
                         ? client.jobState(podName)
-                        : client.podState(podName,initContainer)
+                        : client.podState(podName)
                 if( newState ) {
                    log.trace "[K8s] Get ${resourceType.lower()}=$podName state=$newState"
                    state = newState
@@ -483,15 +483,14 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
         if( !podName ) throw new IllegalStateException("Missing K8s ${resourceType.lower()} name -- cannot check if running")
         if(isSubmitted()) {
             if ( !task?.initialized ){
-                def state = getState( true )
-                if (state && (state.terminated)) {
-                    int exitCode = (state.terminated as Map).exitCode as Integer
-                    if ( exitCode != 0 ){
-                        initError = exitCode
-                    } else {
-                        task.initialized = true
-                    }
-                    this.state = null
+                Map state = schedulerClient.getTaskState(task.id.intValue())
+                if( [ "PREPARED", "FINISHED", "DELETED"].contains( state.state.toString() ) ){
+                    task.initialized = true
+                } else if ( [ "INIT_WITH_ERRORS" ].contains( state.state.toString() ) ) {
+                    initError = 1
+                    return false
+                } else {
+                    return false
                 }
             }
             def state = getState()
