@@ -16,6 +16,7 @@
 
 package nextflow.k8s
 
+import nextflow.extension.GroupKey
 import org.codehaus.groovy.runtime.GStringImpl
 
 import java.nio.file.Files
@@ -345,12 +346,18 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
             String key,
             Object input
     ){
-        if( input instanceof Collection ){
+        if ( input == null ) {
+            return
+        } else if( input instanceof Collection ){
             input.forEach { extractValue(booleanInputs, numberInputs, stringInputs, fileInputs, key, it) }
-        } else if( input instanceof Map ){
+        } else if( input instanceof Map ) {
             input.entrySet().forEach { extractValue(booleanInputs, numberInputs, stringInputs, fileInputs, key + it.key, it.value) }
+        } else if ( input instanceof GroupKey ) {
+            extractValue( booleanInputs, numberInputs, stringInputs, fileInputs, key, input.target )
         } else if( input instanceof FileHolder ){
             fileInputs.add([ name : key, value : [ storePath : input.storePath.toString(), sourceObj : input.sourceObj.toString(), stageName : input.stageName.toString() ]])
+        } else if( input instanceof Path ){
+            fileInputs.add([ name : key, value : [ storePath : input.toAbsolutePath().toString(), sourceObj : input.toAbsolutePath().toString(), stageName : input.fileName.toString() ]])
         } else if ( input instanceof Boolean ) {
             booleanInputs.add( [ name : key, value : input] )
         } else if ( input instanceof Number ) {
