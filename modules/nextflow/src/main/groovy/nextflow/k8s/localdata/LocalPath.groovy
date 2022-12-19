@@ -483,6 +483,14 @@ class LocalPath implements Path {
         }
     }
 
+    <T> T asType( Class<T> c ) {
+        if ( c == Path.class ) return this
+        if ( c == File.class ) return toFile()
+        if ( c == String.class ) return toString()
+        log.info("Invoke method asType $c on $this")
+        return super.asType( c )
+    }
+
     @Override
     Object invokeMethod(String name, Object args) {
         Map downloadResult = download()
