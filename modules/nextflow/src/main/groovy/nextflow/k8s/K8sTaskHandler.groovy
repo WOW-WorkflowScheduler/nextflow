@@ -482,7 +482,7 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
     boolean checkIfRunning() {
         if( !podName ) throw new IllegalStateException("Missing K8s ${resourceType.lower()} name -- cannot check if running")
         if(isSubmitted()) {
-            if ( !task?.initialized ){
+            if ( task && !task.initialized ){
                 Map state = schedulerClient.getTaskState(task.id.intValue())
                 if( [ "PREPARED", "FINISHED", "DELETED"].contains( state.state.toString() ) ){
                     task.initialized = true
