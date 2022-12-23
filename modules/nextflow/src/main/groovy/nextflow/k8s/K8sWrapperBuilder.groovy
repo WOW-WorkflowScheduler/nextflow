@@ -77,7 +77,7 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
     @Override
     protected Map<String, String> makeBinding() {
         final Map<String,String> binding = super.makeBinding()
-        if ( binding.stage_inputs && storage && localWorkDir && !storage.withInitContainers() ) {
+        if ( binding.stage_inputs && storage && localWorkDir && !storage.withInitContainers() && !storage.separateCopy() ) {
             final String cmd = """\
                     # copy inputs from other nodes
                     local s="\$PWD"
@@ -90,6 +90,15 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
                         exit 123
                     fi
                     cd "\$s" 
+            """.stripIndent()
+            binding.stage_inputs = cmd + binding.stage_inputs
+        }
+        if ( binding.stage_inputs && storage && localWorkDir && storage.separateCopy() ) {
+            final String cmd = """\
+                    # create symlinks
+                    if test -f "${workDir.toString()}/.command.symlinks"; then
+                        bash "${workDir.toString()}/.command.symlinks"
+                    fi 
             """.stripIndent()
             binding.stage_inputs = cmd + binding.stage_inputs
         }

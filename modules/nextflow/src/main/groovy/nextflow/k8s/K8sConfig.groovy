@@ -445,6 +445,14 @@ class K8sConfig implements Map<String,Object> {
             return "true".equalsIgnoreCase(target.initContainers as String)
         }
 
+        /**
+         * If copy process is not running together with the main pod. If this is set, initContainers will be ignored
+         * @return
+         */
+        boolean separateCopy() {
+            return true
+        }
+
     }
 }
 

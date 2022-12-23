@@ -250,13 +250,13 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
 
         final def storage = executor?.getK8sConfig()?.getStorage()
         if ( storage ){
-            task.initialized = !storage.withInitContainers()
-            task.withInit = storage.withInitContainers()
-            if ( storage.withInitContainers() ) {
+            task.initialized = !storage.withInitContainers() || storage.separateCopy()
+            task.withInit = storage.withInitContainers() && !storage.separateCopy()
+            if ( storage.withInitContainers() && !storage.separateCopy() ) {
                 builder.withInitImageName( storage.getImageName() )
                 builder.withInitWorkDir( task.workDir )
                 Boolean traceEnabled = Boolean.valueOf( executor.session.config.navigate('trace.enabled') as String )
-                builder.withInitCommand( ['bash',"-c", "${storage.getCmd().strip()} $traceEnabled | tee ${TaskRun.CMD_INIT_LOG}".toString()] )
+                builder.withInitCommand( ['bash',"-c", "${storage.getCmd().strip()} $traceEnabled".toString()] )
             }
         }
 
