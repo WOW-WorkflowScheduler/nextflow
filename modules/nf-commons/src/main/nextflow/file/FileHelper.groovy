@@ -832,9 +832,9 @@ class FileHelper {
 
             @Override
             FileVisitResult preVisitDirectory(Path fullPath, BasicFileAttributes attrs) throws IOException {
+                fullPath = outFileExists ? fakePath(fullPath,folder) : fullPath
                 final int depth = fullPath.nameCount - folder.nameCount
-                final Path fakePath = outFileExists ? fakePath(fullPath,folder) : null
-                final path = relativize0(folder, fakePath ?: fullPath)
+                final path = relativize0(folder, fullPath)
                 log.trace "visitFiles > dir=$path; depth=$depth; includeDir=$includeDir; matches=${matcher.matches(path)}; isDir=${attrs.isDirectory()}"
 
                 if (depth>0 && includeDir && matcher.matches(path) && attrs.isDirectory() && (includeHidden || !isHidden(fullPath))) {
