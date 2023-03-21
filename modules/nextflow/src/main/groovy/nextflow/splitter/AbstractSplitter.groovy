@@ -16,8 +16,6 @@
 
 package nextflow.splitter
 
-import nextflow.k8s.localdata.LocalPath
-
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.GZIPInputStream
@@ -452,12 +450,7 @@ abstract class AbstractSplitter<T> implements SplitterStrategy {
      */
     protected InputStream newInputStream( Path path ) {
 
-        def result
-        if ( path instanceof LocalPath ) {
-            result = ((LocalPath) path).newInputStream()
-        }else {
-            result = Files.newInputStream(path)
-        }
+        def result = Files.newInputStream(path)
 
         if( decompress == null && path.name.endsWith('.gz') )
             decompress = true

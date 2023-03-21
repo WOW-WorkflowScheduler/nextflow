@@ -530,7 +530,7 @@ class LocalPath implements Path {
 
     @Override
     FileSystem getFileSystem() {
-        path.getFileSystem()
+        LocalFileSystem.INSTANCE
     }
 
     @Override

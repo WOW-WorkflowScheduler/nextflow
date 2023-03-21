@@ -252,11 +252,7 @@ public class CacheHelper {
     static private Hasher hashFile( Hasher hasher, Path path, HashMode mode ) {
         BasicFileAttributes attrs=null;
         try {
-            if ( path.getClass().toString().endsWith("nextflow.k8s.localdata.LocalPath") ){
-                attrs = (BasicFileAttributes) path.getClass().getMethod("getAttributes").invoke(path);
-            } else {
-                attrs = Files.readAttributes(path, BasicFileAttributes.class);
-            }
+            attrs = Files.readAttributes(path, BasicFileAttributes.class);
         }
         catch(IOException e) {
             log.debug("Unable to get file attributes file: {} -- Cause: {}", FilesEx.toUriString(path), e.toString());
