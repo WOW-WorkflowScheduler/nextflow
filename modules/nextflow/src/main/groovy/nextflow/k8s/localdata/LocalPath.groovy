@@ -507,6 +507,10 @@ class LocalPath implements Path {
         return result
     }
 
+    String getBaseName() {
+        path.getBaseName()
+    }
+
     boolean isDirectory( LinkOption... options ) {
         attributes ? attributes.isDirectory() : 0
     }
