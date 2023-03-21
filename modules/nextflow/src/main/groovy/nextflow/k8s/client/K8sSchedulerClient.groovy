@@ -139,6 +139,8 @@ class K8sSchedulerClient {
             Map container = pod.spec.containers.get(0) as Map
             container.put('env', env)
 
+            (pod.spec.containers.get(0).resources as Map).remove('limits')
+
             k8sClient.podCreate( pod, Paths.get('.nextflow-scheduler.yaml'), namespace)
         }
 
