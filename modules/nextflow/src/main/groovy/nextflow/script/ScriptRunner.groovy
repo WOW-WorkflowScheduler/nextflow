@@ -239,7 +239,6 @@ class ScriptRunner {
         session.destroy()
         session.cleanup()
         Global.cleanUp()
-
         log.debug "> Execution complete -- Goodbye"
     }
 
