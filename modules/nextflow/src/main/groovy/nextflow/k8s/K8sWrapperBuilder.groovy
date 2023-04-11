@@ -97,7 +97,7 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
             final String cmd = """\
                     # create symlinks
                     if test -f "${workDir.toString()}/.command.symlinks"; then
-                        bash "${workDir.toString()}/.command.symlinks"
+                        bash "${workDir.toString()}/.command.symlinks" || true
                     fi 
             """.stripIndent()
             binding.stage_inputs = cmd + binding.stage_inputs
