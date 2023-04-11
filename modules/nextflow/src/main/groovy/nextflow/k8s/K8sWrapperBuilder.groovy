@@ -113,7 +113,9 @@ class K8sWrapperBuilder extends BashWrapperBuilder {
         }
         cmd += super.getLaunchCommand(interpreter, env)
         if( storage && localWorkDir && isTraceRequired() ){
+            cmd += "\nlocal exitCode=\$?"
             cmd += """\necho \"infiles_time=\${INFILESTIME}" >> ${TaskRun.CMD_TRACE}\n"""
+            cmd += "return \$exitCode\n"
         }
         return cmd
     }
