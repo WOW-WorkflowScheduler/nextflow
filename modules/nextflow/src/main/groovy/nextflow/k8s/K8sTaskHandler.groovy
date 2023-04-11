@@ -241,9 +241,6 @@ class K8sTaskHandler extends TaskHandler implements FusionAwareTask {
             builder.withCommand(launcher)
         }
 
-        if ( executor?.getK8sConfig()?.getScheduler() )
-            builder.withScheduler( "${executor.getK8sConfig().getScheduler().getName()}-${getRunName()}" )
-
         final def schedulerConf = executor?.getK8sConfig()?.getScheduler()
         if ( schedulerConf )
             builder.withScheduler( "${schedulerConf.getName()}-${getRunName()}" )
