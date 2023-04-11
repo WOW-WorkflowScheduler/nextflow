@@ -1,3 +1,5 @@
+import java.nio.file.Files
+
 configurations {
     capsule
     defaultCfg.extendsFrom api 
@@ -285,7 +287,12 @@ task dockerPack(type: Exec, dependsOn: ['packOne']) {
     if( dockerBase.exists() ) dockerBase.deleteDir()
     dockerBase.mkdirs()
     def dockerFile = new File("$buildDir/docker/Dockerfile")
+    new File("$buildDir/docker/getStatsAndResolveSymlinks.c").text = new File("scheduler/getStatsAndResolveSymlinks.c").text
     dockerFile.text = """
+    FROM gcc AS scheduler-script
+    COPY getStatsAndResolveSymlinks.c /build/getStatsAndResolveSymlinks.c
+    RUN gcc -static /build/getStatsAndResolveSymlinks.c -o /build/getStatsAndResolveSymlinks
+    
     FROM amazoncorretto:17-alpine-jdk
     RUN apk update && apk add bash && apk add coreutils && apk add curl
     COPY .nextflow /.nextflow
@@ -296,6 +303,7 @@ task dockerPack(type: Exec, dependsOn: ['packOne']) {
     RUN touch /.nextflow/dockerized && rm -rf /.nextflow/launch-classpath
     RUN chmod +x /usr/local/bin/nextflow /usr/local/bin/entry.sh
     RUN nextflow info
+    COPY --from=scheduler-script /build/getStatsAndResolveSymlinks /usr/local/bin/getStatsAndResolveSymlinks
     ENTRYPOINT ["/usr/local/bin/entry.sh"]
     """
 
