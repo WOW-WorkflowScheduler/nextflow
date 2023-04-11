@@ -17,7 +17,9 @@
 package nextflow
 
 import static nextflow.file.FileHelper.*
+import nextflow.k8s.localdata.LocalPath
 
+import java.nio.file.FileSystem
 import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path
@@ -106,6 +108,11 @@ class Nextflow {
 
         if( !filePattern )
             throw new IllegalArgumentException("Argument of `file` function cannot be ${filePattern==null?'null':'empty'}")
+
+        //If the filePattern is a LocalPath, then it is already a concrete file
+        if ( filePattern instanceof LocalPath ) {
+            return filePattern
+        }
 
         final path = filePattern as Path
         final glob = options?.containsKey('glob') ? options.glob as boolean : isGlobAllowed(path)
