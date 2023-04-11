@@ -145,7 +145,7 @@ class K8sClient {
      */
     K8sResponseJson podCreate(String req, namespace = config.namespace) {
         assert req
-        final action = "/api/v1/namespaces/$config.namespace/pods"
+        final action = "/api/v1/namespaces/$namespace/pods"
         final resp = post(action, req)
         trace('POST', action, resp.text)
         return new K8sResponseJson(resp.text)
