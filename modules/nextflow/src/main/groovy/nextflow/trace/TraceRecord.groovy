@@ -600,7 +600,7 @@ class TraceRecord implements Serializable {
         }
     }
 
-    private long parseDouble( String str, Path file , String row )  {
+    private double parseDouble( String str, Path file , String row )  {
         try {
             str.toDouble()
         }
