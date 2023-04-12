@@ -287,7 +287,7 @@ task dockerPack(type: Exec, dependsOn: ['packOne']) {
     if( dockerBase.exists() ) dockerBase.deleteDir()
     dockerBase.mkdirs()
     def dockerFile = new File("$buildDir/docker/Dockerfile")
-    new File("$buildDir/docker/getStatsAndResolveSymlinks.c").text = new File("scheduler/getStatsAndResolveSymlinks.c").text
+    ant.copy(file: "scheduler/getStatsAndResolveSymlinks.c" , todir: "$buildDir/docker/", overwrite: true)
     dockerFile.text = """
     FROM gcc AS scheduler-script
     COPY getStatsAndResolveSymlinks.c /build/getStatsAndResolveSymlinks.c
