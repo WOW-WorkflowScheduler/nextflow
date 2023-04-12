@@ -1030,8 +1030,8 @@ class TaskProcessor {
                 initErrCount = task ? task.initFailCount : 0
                 procErrCount = ++errorCount
             }
-            String logMessage = "${task.name}: errorCount: $procErrCount, retryCount: $taskErrCount"
-            if ( task.withInit ) logMessage += ", initCount: $initErrCount"
+            String logMessage = "${safeTaskName(task)}: errorCount: $procErrCount, retryCount: $taskErrCount"
+            if ( task?.withInit ) logMessage += ", initCount: $initErrCount"
             log.info( logMessage )
 
             // -- when is a task level error and the user has chosen to ignore error,
