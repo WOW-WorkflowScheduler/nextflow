@@ -23,7 +23,7 @@ class LocalProvider extends FileSystemProvider {
 
     @Override
     String getScheme() {
-        throw new NotImplementedException()
+        return "file"
     }
 
     @Override
