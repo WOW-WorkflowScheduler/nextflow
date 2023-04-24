@@ -217,13 +217,11 @@ class LocalPath implements Path {
     }
 
     List<String> readLines(){
-        readLines( Charset.defaultCharset().toString() )
+        IOGroovyMethods.readLines( newReader() )
     }
 
     List<String> readLines( String charset ){
-        List<String> lines = new LinkedList<>()
-        withReader( charset, { line -> lines.add( lines as String )} )
-        return lines
+        IOGroovyMethods.readLines( newReader( charset ) )
     }
 
     public <T> T eachLine( Closure<T> closure ) throws IOException {
