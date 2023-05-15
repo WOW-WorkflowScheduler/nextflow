@@ -359,7 +359,7 @@ class TaskConfig extends LazyMap implements Cloneable {
 
     List<PublishDir> getPublishDir() {
         def dirs = get('publishDir')
-        if( !dirs ) {
+        if( !dirs || target.skipPublishDir ) {
             return Collections.emptyList()
         }
 
