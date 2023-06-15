@@ -134,6 +134,7 @@ class TraceRecord implements Serializable {
             scheduler_delta_batch_start_received:  'num',
             scheduler_delta_batch_closed_batch_end:'num',
             scheduler_delta_submitted_batch_end:   'num',
+            scheduler_time_delta_phase_three:      'str',
     ]
 
     static public Map<String,Closure<String>> FORMATTER = [
@@ -514,6 +515,7 @@ class TraceRecord implements Serializable {
                 continue
             switch( name ) {
                 case "scheduler_nodes_cost" :
+                case "scheduler_time_delta_phase_three" :
                 case "scheduler_init_throughput":
                     this.put( name, value )
                     break
