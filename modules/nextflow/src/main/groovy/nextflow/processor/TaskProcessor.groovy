@@ -995,8 +995,8 @@ class TaskProcessor {
             if( error instanceof Error ) throw error
 
             // -- retry without increasing the error counts
-            if( task && (error.cause instanceof ProcessRetryableException || error.cause instanceof CloudSpotTerminationException) ) {
-                if( error.cause instanceof ProcessRetryableException )
+            if( task && (error.cause instanceof ProcessRetryableException || error instanceof ProcessRetryableException || error.cause instanceof CloudSpotTerminationException ) ) {
+                if( error.cause instanceof ProcessRetryableException || error instanceof ProcessRetryableException )
                     log.info "[$task.hashLog] NOTE: ${error.message} -- Execution is retried"
                 else
                     log.info "[$task.hashLog] NOTE: ${error.message} -- Cause: ${error.cause.message} -- Execution is retried"
