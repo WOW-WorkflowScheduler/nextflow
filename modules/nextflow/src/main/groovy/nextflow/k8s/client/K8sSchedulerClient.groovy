@@ -70,7 +70,7 @@ class K8sSchedulerClient {
     }
 
     private String getDNS(){
-        return "http://${ip.replace('.','-')}.${namespace}.pod.cluster.local:${schedulerConfig.getPort()}/v1/"
+        return "http://${ip}:${schedulerConfig.getPort()}/v1/"
     }
 
     private void startScheduler(){
