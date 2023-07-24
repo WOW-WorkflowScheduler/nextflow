@@ -101,7 +101,7 @@ class TraceRecord implements Serializable {
             vol_ctxt:                              'num',
             inv_ctxt:                              'num',
             hostname:                              'str',
-            cpu_model:                             'str'
+            cpu_model:                             'str',
             out_label:                             'str',
             scheduler_files_bytes:                 'num',
             scheduler_files_node_bytes:            'num',
