@@ -135,6 +135,7 @@ class TraceRecord implements Serializable {
             scheduler_delta_batch_closed_batch_end:'num',
             scheduler_delta_submitted_batch_end:   'num',
             scheduler_time_delta_phase_three:      'str',
+            scheduler_copy_tasks:                  'num',
     ]
 
     static public Map<String,Closure<String>> FORMATTER = [
